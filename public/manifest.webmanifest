@@ -1,0 +1,14 @@
+{
+  "name": "ตังค์พอดี — วางแผนเงินแบบใจเย็น",
+  "short_name": "ตังค์พอดี",
+  "description": "จดรายรับรายจ่าย จัดงบรายวัน ติดตามบิล หนี้ และกระปุกออม",
+  "lang": "th-TH",
+  "start_url": "./#overview",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8fb",
+  "theme_color": "#fff8fb",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
