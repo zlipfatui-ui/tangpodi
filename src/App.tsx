@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import {
   ArrowDownLeft,
   CircleHelp,
@@ -8,6 +8,7 @@ import {
   Moon,
   PiggyBank,
   Plus,
+  ScanLine,
   Sun,
   WalletCards,
 } from 'lucide-react'
@@ -15,6 +16,7 @@ import { FinanceDialog, type ActiveDialog, type DialogSubmission } from './compo
 import { AppDialog, Toast, type ToastMessage } from './components/UI'
 import { CoachMarks, PiggyHelpDialog } from './components/PiggyGuide'
 import { MorePage } from './morePage'
+import type { SlipScanResult } from './lib/slipScan'
 import { CalendarPage, GoalsPage, HomePage, LedgerPage, SettingsPage, UtilitiesPage } from './pages'
 import { markBillPaid, moveGoalMoney, recordDebtPayment } from './lib/actions'
 import { buildCalendarFile } from './lib/calendar'
@@ -28,6 +30,8 @@ import { getSavingStreak } from './lib/streak'
 import { getPiggyHint } from './lib/piggyHints'
 import { getMonthlySummary } from './lib/monthlySummary'
 import './App.css'
+
+const SlipScanDialog = lazy(() => import('./components/SlipScanDialog'))
 
 type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings'
 type TabName = 'overview' | 'ledger' | 'goals' | 'more'
@@ -100,6 +104,7 @@ export default function App() {
   const [loadError, setLoadError] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [slipOpen, setSlipOpen] = useState(false)
   const [entryTransitionFinished, setEntryTransitionFinished] = useState(false)
   const [guideOpen, setGuideOpen] = useState(hasPendingGuide)
   const dataReady = data !== null
@@ -412,9 +417,15 @@ export default function App() {
       <div className="add-sheet">
         <button type="button" className="add-sheet-option add-sheet-option--expense" onClick={() => { setAddOpen(false); setDialog({ kind: 'transaction', presetKind: 'expense' }) }}><span className="icon-disc icon-disc--pink"><Plus size={20} /></span><b>จ่ายเงิน</b><small>จดรายจ่ายที่เพิ่งใช้</small></button>
         <button type="button" className="add-sheet-option" onClick={() => { setAddOpen(false); setDialog({ kind: 'transaction', presetKind: 'income' }) }}><span className="icon-disc icon-disc--mint"><ArrowDownLeft size={20} /></span><b>รับเงิน</b><small>จดรายรับที่เข้ามา</small></button>
+        <button type="button" className="add-sheet-option" onClick={() => { setAddOpen(false); setSlipOpen(true) }}><span className="icon-disc icon-disc--pink"><ScanLine size={20} /></span><b>สแกนสลิป</b><small>ถ่ายหรือเลือกรูปสลิป ระบบอ่านยอดให้</small></button>
         <button type="button" className="add-sheet-option" onClick={() => { setAddOpen(false); saveToday() }}><span className="icon-disc icon-disc--turquoise"><PiggyBank size={20} /></span><b>ออมเงิน</b><small>เติมกระปุกและสะสม streak</small></button>
       </div>
     </AppDialog>
+    {slipOpen && <Suspense fallback={null}><SlipScanDialog open knownRefs={(data.transactions.map((item) => item.slipRef).filter(Boolean)) as string[]} onClose={() => setSlipOpen(false)} onDone={(result: SlipScanResult) => {
+      setSlipOpen(false)
+      if (result.amount === undefined) notify('อ่านยอดจากสลิปไม่ได้ กรอกเองได้เลย', 'info')
+      setDialog({ kind: 'transaction', presetKind: 'expense', prefill: { amount: result.amount, date: result.date, slipRef: result.slipRef, note: result.recipient ? `โอนให้ ${result.recipient}` : 'จากสลิปโอนเงิน' } })
+    }} /></Suspense>}
     <PiggyHelpDialog page={page} open={helpOpen} onClose={() => setHelpOpen(false)} onTour={startTour} />
     <Toast toast={toast} />
     {entryTransitionVisible && <div className="entry-transition" aria-hidden="true">

@@ -1,10 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// ค่าสาธารณะ (publishable key) ใส่ในเว็บได้ ความปลอดภัยอยู่ที่ Row Level Security ใน supabase/schema.sql
-const url = import.meta.env.VITE_SUPABASE_URL ?? 'https://blkgiykznjnrsgxifqpf.supabase.co'
-const key = import.meta.env.VITE_SUPABASE_KEY ?? 'sb_publishable_sBLLtxVGK_mHwEuuE4fV-g_YI7Pwqvo'
+import { supabaseKey, supabaseUrl } from './supabaseConfig'
 
-export const supabase = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } })
+export const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } })
 
 export function friendlyAuthError(message: string): string {
   if (/invalid login/i.test(message)) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'

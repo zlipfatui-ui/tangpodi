@@ -5,8 +5,15 @@ import { AppDialog, FormField } from './UI'
 import { formatMoney, getTodayISO } from '../lib/presentation'
 import type { Bill, CalendarEvent, Debt, MoneyTransaction, SavingsGoal } from '../lib/finance'
 
+export interface TransactionPrefill {
+  amount?: number
+  date?: string
+  note?: string
+  slipRef?: string
+}
+
 export type ActiveDialog =
-  | { kind: 'transaction'; transaction?: MoneyTransaction; presetKind?: 'income' | 'expense' }
+  | { kind: 'transaction'; transaction?: MoneyTransaction; presetKind?: 'income' | 'expense'; prefill?: TransactionPrefill }
   | { kind: 'bill'; bill?: Bill; title?: string; amount?: number }
   | { kind: 'debt'; debt?: Debt }
   | { kind: 'goal'; goal?: SavingsGoal }
@@ -73,7 +80,7 @@ export function FinanceDialog({ dialog, onClose, onSave }: FinanceDialogProps) {
     const item = dialog.transaction
     const kind = item?.kind ?? dialog.presetKind ?? 'expense'
     const categoryOptions = kind === 'income' ? ['เงินเดือน', 'งานเสริม', 'ของขวัญ', 'รายรับอื่น'] : ['อาหาร', 'ของกินของใช้', 'เดินทาง', 'บ้าน', 'สุขภาพ', 'กินข้างนอก', 'ช้อปปิ้ง', 'อื่น ๆ']
-    return <TransactionDialog key={item?.id ?? dialog.presetKind ?? 'transaction-new'} item={item} presetKind={kind as 'income' | 'expense'} categories={categoryOptions} error={error} saving={saving} onClose={onClose} onSubmit={submit} />
+    return <TransactionDialog key={item?.id ?? `${dialog.presetKind ?? 'transaction-new'}-${dialog.prefill?.slipRef ?? ''}`} item={item} prefill={dialog.prefill} presetKind={kind as 'income' | 'expense'} categories={categoryOptions} error={error} saving={saving} onClose={onClose} onSubmit={submit} />
   }
 
   if (dialog.kind === 'bill') return <BillDialog key={dialog.bill?.id ?? dialog.title ?? 'bill-new'} bill={dialog.bill} title={dialog.title} amount={dialog.amount} error={error} saving={saving} onClose={onClose} onSubmit={submit} />
@@ -103,12 +110,12 @@ export function FinanceDialog({ dialog, onClose, onSave }: FinanceDialogProps) {
   </AppDialog>
 }
 
-function TransactionDialog({ item, presetKind, categories, error, saving, onClose, onSubmit }: { item?: MoneyTransaction; presetKind: 'income' | 'expense'; categories: string[]; error: string; saving: boolean; onClose: () => void; onSubmit: (submission: DialogSubmission) => void }) {
+function TransactionDialog({ item, prefill, presetKind, categories, error, saving, onClose, onSubmit }: { item?: MoneyTransaction; prefill?: TransactionPrefill; presetKind: 'income' | 'expense'; categories: string[]; error: string; saving: boolean; onClose: () => void; onSubmit: (submission: DialogSubmission) => void }) {
   const [kind, setKind] = useState<'income' | 'expense'>(item?.kind ?? presetKind)
-  const [amount, setAmount] = useState(item ? String(item.amount) : '')
+  const [amount, setAmount] = useState(item ? String(item.amount) : prefill?.amount ? String(prefill.amount) : '')
   const [category, setCategory] = useState(item?.category ?? categories[0])
-  const [date, setDate] = useState(item?.date ?? getTodayISO())
-  const [note, setNote] = useState(item?.note ?? '')
+  const [date, setDate] = useState(item?.date ?? prefill?.date ?? getTodayISO())
+  const [note, setNote] = useState(item?.note ?? prefill?.note ?? '')
   const [validation, setValidation] = useState('')
   const options = kind === 'income' ? ['เงินเดือน', 'งานเสริม', 'ของขวัญ', 'รายรับอื่น'] : ['อาหาร', 'ของกินของใช้', 'เดินทาง', 'บ้าน', 'สุขภาพ', 'กินข้างนอก', 'ช้อปปิ้ง', 'อื่น ๆ']
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -117,9 +124,9 @@ function TransactionDialog({ item, presetKind, categories, error, saving, onClos
     if (!Number.isFinite(amountValue) || amountValue <= 0) { setValidation('กรอกจำนวนเงินมากกว่า 0 บาท'); return }
     if (!date) { setValidation('เลือกวันที่ของรายการ'); return }
     setValidation('')
-    void onSubmit({ kind: 'transaction', value: { id: item?.id ?? makeId(), date, kind, amount: amountValue, category, note: note.trim() } })
+    void onSubmit({ kind: 'transaction', value: { id: item?.id ?? makeId(), date, kind, amount: amountValue, category, note: note.trim(), ...(item?.slipRef ?? prefill?.slipRef ? { slipRef: item?.slipRef ?? prefill?.slipRef } : {}) } })
   }
-  return <AppDialog open title={item ? 'แก้ไขรายการ' : 'เพิ่มรายการ'} description="จำนวนเงินใช้หน่วยบาท" onClose={onClose}>
+  return <AppDialog open title={item ? 'แก้ไขรายการ' : 'เพิ่มรายการ'} description={prefill ? 'อ่านจากสลิป ตรวจยอดและวันที่ให้ถูกต้องก่อนบันทึก' : 'จำนวนเงินใช้หน่วยบาท'} onClose={onClose}>
     <DialogForm title="บันทึกรายการ" onSubmit={handleSubmit} onCancel={onClose} saving={saving} submitLabel={item ? 'บันทึกการแก้ไข' : 'บันทึกรายการ'}>
       <div className="segmented form-toggle" aria-label="ประเภทรายการ"><button type="button" aria-pressed={kind === 'expense'} onClick={() => { setKind('expense'); setCategory('อาหาร') }}><ArrowUpRight size={15} /> รายจ่าย</button><button type="button" aria-pressed={kind === 'income'} onClick={() => { setKind('income'); setCategory('เงินเดือน') }}><ArrowDownLeft size={15} /> รายรับ</button></div>
       <FormField id="transaction-amount" label="จำนวนเงิน" error={validation}><div className="input-suffix"><input id="transaction-amount" type="number" min="0.01" step="0.01" inputMode="decimal" value={amount} autoFocus={!item} onChange={(event) => setAmount(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
