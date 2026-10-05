@@ -2,8 +2,11 @@ import type { FinanceData } from './finance'
 import { addOneMonth } from './finance'
 
 export function addDefaultTheme(data: FinanceData): FinanceData {
-  if (data.settings.theme === 'light' || data.settings.theme === 'dark') return data
-  return { ...data, settings: { ...data.settings, theme: 'light' } }
+  const themed = data.settings.theme === 'light' || data.settings.theme === 'dark'
+    ? data
+    : { ...data, settings: { ...data.settings, theme: 'light' as const } }
+  if (themed.recurring && themed.piggy) return themed
+  return { ...themed, recurring: themed.recurring ?? [], piggy: themed.piggy ?? { hintsEnabled: true, dismissed: {} } }
 }
 
 export function createEmptyFinanceData(): FinanceData {
@@ -24,6 +27,8 @@ export function createEmptyFinanceData(): FinanceData {
     goals: [],
     events: [],
     goalMovements: [],
+    recurring: [],
+    piggy: { hintsEnabled: true, dismissed: {} },
     isDemo: false,
   }
 }
@@ -91,6 +96,8 @@ export function createDemoFinanceData(today = new Date()): FinanceData {
       { id: 'demo-goal-in-1', goalId: 'demo-trip-goal', date: dateWithDay(previous, 5), direction: 'in', amount: 3000, note: 'เริ่มเก็บทริปแรก' },
       { id: 'demo-goal-in-2', goalId: 'demo-trip-goal', date: dateWithDay(previous, 20), direction: 'in', amount: 3400, note: 'เติมกระปุก' },
     ],
+    recurring: [],
+    piggy: { hintsEnabled: true, dismissed: {} },
     isDemo: true,
   }
 }

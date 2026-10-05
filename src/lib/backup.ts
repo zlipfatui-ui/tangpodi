@@ -1,4 +1,5 @@
 import type { FinanceData } from './finance'
+import { addDefaultTheme } from './data'
 
 const schemaVersion = 1
 
@@ -78,9 +79,5 @@ export function parseBackup(contents: string): FinanceData {
   if (!isRecord(parsed)) throw new Error('อ่านไฟล์สำรองไม่ได้')
   if (parsed.schemaVersion !== schemaVersion) throw new Error('เวอร์ชันไฟล์สำรองนี้ไม่รองรับ')
   if (!isFinanceData(parsed.data)) throw new Error('ไฟล์สำรองไม่ครบหรือเสียหาย')
-  return {
-    ...parsed.data,
-    settings: { ...parsed.data.settings, theme: parsed.data.settings.theme ?? 'light' },
-    isDemo: false,
-  }
+  return addDefaultTheme({ ...parsed.data, isDemo: false })
 }

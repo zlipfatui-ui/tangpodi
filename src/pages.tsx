@@ -31,6 +31,11 @@ import { addDays, calculateBudgetSummary, calculateElectricity, calculateWater, 
 import { formatDate, formatMoney, formatMonth, getMonthGrid, getTodayISO, periodLabel, shiftAnchor } from './lib/presentation'
 import { getPersonalLuckyColors, getWeekdayColor } from './lib/luckyColors'
 import { FormField } from './components/UI'
+import { PiggyHintBanner, StreakCard } from './components/PiggyGuide'
+import { MonthlySummaryCard } from './components/MonthlySummaryCard'
+import type { PiggyHint } from './lib/piggyHints'
+import type { SavingStreak } from './lib/streak'
+import type { MonthlySummary } from './lib/monthlySummary'
 import piggyBankMascot from './assets/piggy-bank.webp'
 
 const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
@@ -117,9 +122,14 @@ interface HomePageProps {
   onQuickAdd: (kind: 'income' | 'expense') => void
   onPayBill: (bill: Bill) => void
   onPayDebt: (debt: Debt) => void
+  streak: SavingStreak
+  hint: PiggyHint | null
+  summary: MonthlySummary
+  onSaveToday: () => void
+  onDismissHint: () => void
 }
 
-export function HomePage({ data, anchor, view, onViewChange, onShift, onNavigate, onQuickAdd, onPayBill, onPayDebt }: HomePageProps) {
+export function HomePage({ data, anchor, view, streak, hint, summary: monthlySummary, onSaveToday, onDismissHint, onViewChange, onShift, onNavigate, onQuickAdd, onPayBill, onPayDebt }: HomePageProps) {
   const today = getTodayISO()
   const dailyNudge = getDailyNudge(data, today)
   const summary = calculateBudgetSummary(data, anchor, view)
@@ -152,6 +162,7 @@ export function HomePage({ data, anchor, view, onViewChange, onShift, onNavigate
   return (
     <div className="page-stack">
       {data.isDemo && <div className="demo-banner"><WalletCards size={17} /> <span>นี่คือข้อมูลตัวอย่าง ลองกดดูได้เลย</span><button type="button" className="text-button" onClick={() => onNavigate('settings')}>เริ่มใช้ข้อมูลของฉัน <ChevronRight size={14} /></button></div>}
+      {hint && <PiggyHintBanner hint={hint} onAction={onNavigate} onDismiss={onDismissHint} />}
       <section className="home-welcome">
         <div className="home-welcome__copy">
           <div className="home-welcome__text"><div className="eyebrow"><PiggyBank size={15} /> หมูออมเงิน · {formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>{dailyNudge.title}</h1><p>{dailyNudge.message} <button className="daily-nudge-action" type="button" onClick={runDailyNudge}>{dailyNudge.actionLabel} <ChevronRight size={13} /></button></p></div>
@@ -167,10 +178,12 @@ export function HomePage({ data, anchor, view, onViewChange, onShift, onNavigate
         <div className="period-switch" key={`${view}-${anchor}`}><button className="icon-button" type="button" aria-label="ช่วงก่อนหน้า" onClick={() => onShift(-1)}><ChevronLeft size={18} /></button><span>{periodLabel(anchor, view, summary.start, summary.end)}</span><button className="icon-button" type="button" aria-label="ช่วงถัดไป" onClick={() => onShift(1)}><ChevronRight size={18} /></button></div>
       </div>
 
+      <StreakCard streak={streak} hasGoals={data.goals.length > 0} onSave={onSaveToday} />
+
       <div className="home-grid">
         <section className="wallet-card" key={`${view}-${anchor}`}>
           <div className="wallet-top"><span className="wallet-kicker"><Wallet size={16} /> เงินใช้ได้ใน{view === 'day' ? 'วันนี้' : view === 'week' ? 'สัปดาห์นี้' : 'เดือนนี้'}</span><span className={`status-pill ${summary.periodRemaining < 0 ? 'status-pill--danger' : 'status-pill--mint'}`}>{summary.periodRemaining < 0 ? 'เกินงบแล้ว' : 'ยังไหวอยู่'}</span></div>
-          <div className={`wallet-amount ${summary.periodRemaining < 0 ? 'wallet-amount--negative' : ''}`}>{formatMoney(summary.periodRemaining)}</div>
+          <div data-tour="amount" className={`wallet-amount ${summary.periodRemaining < 0 ? 'wallet-amount--negative' : ''}`}>{formatMoney(summary.periodRemaining)}</div>
           <div className="wallet-caption">จากงบช่วงนี้ {formatMoney(summary.periodAllowance)} · ใช้ไป {formatMoney(summary.periodSpent)}</div>
           <div className="wallet-progress" role="progressbar" aria-label="สัดส่วนงบที่ใช้แล้ว" aria-valuenow={Math.round(Math.min(100, percentage))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percentage}%` }} /></div>
           <div className="wallet-footer"><span>งบเดือนนี้ {formatMoney(monthSummary.monthlyAllowance)}</span><span>{formatMoney(monthSummary.periodSpent)} ใช้ไปแล้ว</span></div>
@@ -212,6 +225,8 @@ export function HomePage({ data, anchor, view, onViewChange, onShift, onNavigate
           <p className="belief-note">สีวันเป็นคติไทย ส่วนสีแยกตามเป้าหมายอ้างอิงตารางปี 2569 · เป็นความเชื่อ ไม่ใช่คำทำนาย</p>
           <a className="lucky-source" href="https://www.ktc.co.th/article/shopping/fashion/birthday-auspicious-color-timetable" target="_blank" rel="noreferrer">ที่มาตารางสีตามวันเกิด · KTC <CircleHelp size={13} /></a>
         </section>
+
+        <MonthlySummaryCard summary={monthlySummary} label={formatMonth(`${monthlySummary.month}-01`)} />
 
         <section className="panel due-card">
           <div className="section-heading"><div><span className="eyebrow">ไม่ปล่อยให้ลืม</span><h2>ใกล้ถึงวันจ่าย</h2></div><button className="link-button" type="button" onClick={() => onNavigate('calendar')}>ปฏิทิน <ChevronRight size={15} /></button></div>
@@ -323,13 +338,16 @@ interface GoalsPageProps {
   onEdit: (goal: SavingsGoal) => void
   onMove: (goal: SavingsGoal, direction: 'in' | 'out') => void
   onDelete: (goal: SavingsGoal) => void
+  streak: SavingStreak
+  onSaveToday: () => void
 }
 
-export function GoalsPage({ data, onAdd, onEdit, onMove, onDelete }: GoalsPageProps) {
+export function GoalsPage({ data, streak, onSaveToday, onAdd, onEdit, onMove, onDelete }: GoalsPageProps) {
   const totalBalance = data.goals.reduce((sum, goal) => sum + goal.balance, 0)
   const totalTarget = data.goals.reduce((sum, goal) => sum + goal.target, 0)
   const movements = data.goalMovements.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
   return <div className="page-stack"><section className="welcome-row"><div><div className="eyebrow">เงินก้อนเล็กที่มีความหมาย</div><h1>กระปุกของฉัน</h1><p>เก็บทีละนิด ให้เป้าหมายค่อย ๆ ใกล้เข้ามา</p></div><button className="button button--primary" type="button" onClick={onAdd}><Plus size={17} /> สร้างกระปุก</button></section>
+    <StreakCard streak={streak} hasGoals={data.goals.length > 0} onSave={onSaveToday} />
     <section className="savings-overview"><div className="savings-overview-icon"><Wallet size={24} /></div><div><span>รวมเงินในกระปุก</span><strong>{formatMoney(totalBalance)}</strong></div><div className="savings-overview-divider" /><div><span>เป้าหมายทั้งหมด</span><strong>{formatMoney(totalTarget)}</strong></div></section>
     {data.goals.length ? <div className="goal-grid">{data.goals.map((goal, index) => { const percent = goal.target ? Math.min(100, goal.balance / goal.target * 100) : 0; const GoalIcon = index % 3 === 0 ? WalletCards : index % 3 === 1 ? Wallet : Target; return <article className={`goal-card goal-card--${index % 3}`} key={goal.id}><div className="goal-card-top"><span className="goal-symbol"><GoalIcon size={18} strokeWidth={1.8} /></span><button className="icon-button" type="button" onClick={() => onEdit(goal)} aria-label={`แก้ไขกระปุก ${goal.title}`}><Edit3 size={15} /></button></div><h2>{goal.title}</h2><strong className="goal-balance">{formatMoney(goal.balance)}</strong><span className="goal-target">จากเป้าหมาย {formatMoney(goal.target)}</span><div className="goal-progress" role="progressbar" aria-label={`ความคืบหน้า ${goal.title}`} aria-valuenow={Math.round(percent)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percent}%` }} /></div><div className="goal-percent"><span>{Math.round(percent)}% แล้ว</span><span>ตั้งใจเก็บ {formatMoney(goal.monthlyPlan)}/เดือน</span></div><div className="goal-actions"><button type="button" className="button button--primary button--small" onClick={() => onMove(goal, 'in')}><Plus size={15} /> เติมเงิน</button><button type="button" className="button button--outline button--small" onClick={() => onMove(goal, 'out')}><ArrowUpToLine size={15} /> ถอนเงิน</button><button type="button" className="icon-button icon-button--danger" aria-label={`ลบกระปุก ${goal.title}`} onClick={() => onDelete(goal)}><Trash2 size={15} /></button></div></article> })}</div> : <div className="panel empty-state"><span className="empty-state-icon"><Wallet size={22} /></span><h3>เริ่มกระปุกใบแรก</h3><p>ตั้งเป้าหมาย แล้วบันทึกเงินที่แบ่งไว้</p><button className="button button--primary" type="button" onClick={onAdd}><Plus size={16} /> สร้างกระปุก</button></div>}
     <section className="panel"><div className="section-heading"><div><span className="eyebrow">รายการเคลื่อนไหวล่าสุด</span><h2>เงินเข้าออกกระปุก</h2></div><span className="icon-disc icon-disc--mint"><ArrowDownLeft size={18} /></span></div>{movements.length ? <ul className="transaction-list">{movements.map((movement) => { const goal = data.goals.find((item) => item.id === movement.goalId); return <li className="transaction-row" key={movement.id}><span className={`transaction-icon ${movement.direction === 'in' ? 'transaction-icon--income' : 'transaction-icon--expense'}`}>{movement.direction === 'in' ? <ArrowDownLeft size={17} /> : <ArrowUpToLine size={17} />}</span><div className="transaction-main"><b>{goal?.title ?? 'กระปุกที่ลบแล้ว'}</b><span>{movement.note || (movement.direction === 'in' ? 'เติมกระปุก' : 'ถอนเงิน')} · {formatDate(movement.date)}</span></div><strong className={movement.direction === 'in' ? 'money-positive' : ''}>{movement.direction === 'in' ? '+' : '−'}{formatMoney(movement.amount)}</strong></li> })}</ul> : <div className="empty-inline">ยังไม่มีรายการเคลื่อนไหว</div>}</section>

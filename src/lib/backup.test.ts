@@ -26,7 +26,7 @@ describe('local backup', () => {
     const json = createBackupPayload(sample, new Date('2026-09-23T00:00:00.000Z'))
 
     expect(JSON.parse(json)).toMatchObject({ schemaVersion: 1, appName: 'ตังค์พอดี' })
-    expect(parseBackup(json)).toEqual({ ...sample, isDemo: false })
+    expect(parseBackup(json)).toEqual({ ...sample, recurring: [], piggy: { hintsEnabled: true, dismissed: {} }, isDemo: false })
   })
 
   it('rejects unsupported versions before returning imported data', () => {

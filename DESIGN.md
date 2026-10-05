@@ -53,7 +53,7 @@ The app should feel like opening a tidy cloth wallet with labeled cash envelopes
 - **Usage scene:** Frequent mobile checks between purchases, with a wider desktop view for reviewing monthly history and settings.
 - **Register:** Product-first with a light, friendly character.
 - **Memorable signature:** A soft mint spending envelope card with a stitched budget progress line; the overview pairs a small, friendly savings-pig illustration with one gentle, context-aware daily reminder.
-- **Restraint:** Keep cash values, dates, and action labels plain and high contrast. Use gradients in the page atmosphere and welcome panel, never behind financial figures; keep the pig as a supporting detail rather than a game-like mascot system.
+- **Restraint:** Keep cash values, dates, and action labels plain and high contrast. Use gradients in the page atmosphere and welcome panel, never behind financial figures; the pig guides but never covers figures.
 - **Icon policy:** Never use emoji or Unicode pictographs as interface icons. Use accessible Lucide SVGs with theme-aware strokes.
 - **Anti-references:** Generic banking terminal, dense spreadsheet dashboard, neon gamification, and decorative gradients behind financial figures.
 - **Token ownership/runtime mapping:** `src/index.css` is the canonical runtime token source. This file documents the accepted values; CSS variables map directly to the palette and component styles consume semantic variables.
@@ -113,4 +113,6 @@ Use friendly, direct Thai language: “บันทึกรายจ่าย�
 - **Do:** Make the current safe-to-spend amount the clearest number on the home screen.
 - **Do:** Keep expenses, commitments, and savings visibly separate in forecasts.
 - **Don't:** Use pastel text on pale surfaces or communicate debt status with color alone.
-- **Don't:** Turn an everyday money task into a game or use an invented mascot to conceal a blank state.
+- **Don't:** Turn an everyday money task into a game: no points, levels or leaderboards. The one allowed habit mechanic is the daily saving streak (consecutive days with a jar deposit, shown with a 7-day row); a missed day resets the current run quietly and never shames the user.
+- **Don't:** Use the pig to conceal a blank state; empty states must still say what to do next.
+- **v2 navigation:** four tabs (Home, Records with a list/calendar switch, Jars, More) plus a centre + button on mobile and a Add button in the desktop sidebar. Utilities and Settings live under More.

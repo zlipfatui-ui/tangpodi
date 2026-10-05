@@ -65,6 +65,22 @@ export interface GoalMovement {
   note?: string
 }
 
+export interface RecurringItem {
+  id: string
+  title: string
+  amount: number
+  kind: 'income' | 'expense'
+  category: string
+  frequency: 'monthly' | 'weekly'
+  startDate: string
+  lastGenerated?: string
+}
+
+export interface PiggyState {
+  hintsEnabled: boolean
+  dismissed: Record<string, string>
+}
+
 export interface FinanceData {
   settings: Settings
   transactions: MoneyTransaction[]
@@ -73,6 +89,8 @@ export interface FinanceData {
   goals: SavingsGoal[]
   events: CalendarEvent[]
   goalMovements: GoalMovement[]
+  recurring?: RecurringItem[]
+  piggy?: PiggyState
   isDemo?: boolean
 }
 
