@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { FinanceDialog, type ActiveDialog, type DialogSubmission } from './components/FinanceDialog'
 import { AppDialog, Toast, type ToastMessage } from './components/UI'
+import { toastMs } from './components/motion'
+import { tap } from './lib/haptics'
 import { CoachMarks, PiggyHelpDialog } from './components/PiggyGuide'
 import { MorePage } from './morePage'
 import type { SlipScanResult } from './lib/slipScan'
@@ -122,6 +124,7 @@ export default function App() {
     setRouteDirection(bottomSlot[tabOf(next)] >= bottomSlot[tabOf(current)] ? 'forward' : 'backward')
     setLeavingPage(motionAllowed ? current : null)
     setPage(next)
+    window.scrollTo({ top: 0 })
     if (motionAllowed) routeTimer.current = window.setTimeout(() => { setLeavingPage(null); routeTimer.current = null }, routeAnimationMs)
   }, [])
 
@@ -160,6 +163,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    // โหลดหน้าจอที่ใช้บ่อยรอไว้ตอนเครื่องว่าง เพื่อให้กดแล้วเปิดทันที
+    const timer = window.setTimeout(() => { void import('./components/SlipScanDialog'); void import('./components/SharedJars') }, 2500)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
     if (import.meta.env.PROD && 'serviceWorker' in navigator) {
       void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined)
     }
@@ -167,11 +176,12 @@ export default function App() {
 
   useEffect(() => {
     if (!toast) return
-    const timer = window.setTimeout(() => setToast(null), 3400)
+    const timer = window.setTimeout(() => setToast(null), toastMs(toast))
     return () => window.clearTimeout(timer)
   }, [toast])
 
   const notify = useCallback((text: string, tone: ToastMessage['tone'] = 'success') => {
+    if (tone === 'success') tap()
     setToast({ id: Date.now(), text, tone })
   }, [])
 
@@ -319,8 +329,13 @@ export default function App() {
       if (type === 'debt') next = { ...data, debts: data.debts.filter((item) => item.id !== id), transactions: data.transactions.filter((item) => !(item.linkedType === 'debt' && item.linkedId === id)) }
       if (type === 'goal') next = { ...data, goals: data.goals.filter((item) => item.id !== id), goalMovements: data.goalMovements.filter((item) => item.goalId !== id) }
       if (type === 'event') next = { ...data, events: data.events.filter((item) => item.id !== id) }
-      const success = await persist(next, 'ลบรายการแล้ว')
-      if (success) setDialog(null)
+      const before = data
+      const success = await persist(next)
+      if (success) {
+        setDialog(null)
+        tap()
+        setToast({ id: Date.now(), text: 'ลบรายการแล้ว', tone: 'success', action: { label: 'เลิกทำ', onClick: () => { setToast(null); void persist(before, 'กู้คืนรายการแล้ว') } } })
+      }
       return success
     } })
   }
@@ -411,7 +426,7 @@ export default function App() {
         <div className={`content-wrap${leavingPage ? ' content-wrap--enter' : ''}`} key={page}>{renderContent(page)}</div>
       </div><footer className="app-footer"><span>ตังค์พอดี · จัดเงินได้แบบไม่กดดัน</span><a href="https://museum.li.mahidol.ac.th/color-palettes/" target="_blank" rel="noreferrer">ที่มาสีประจำวัน <CircleHelp size={13} /></a></footer>
     </main>
-    <nav className="bottom-navigation" aria-label="เมนูหลัก"><span className="bottom-nav-indicator" style={{ transform: `translateX(${bottomSlot[activeTab] * 100}%)` }} aria-hidden="true" />{navigation.slice(0, 2).map(({ id, icon: Icon }) => <a href={`#${id}`} key={id} data-tour={`nav-${id}`} className={`bottom-nav-link${activeTab === id ? ' bottom-nav-link--active' : ''}`} aria-current={activeTab === id ? 'page' : undefined} onClick={() => openPage(id)}><Icon size={19} /><span>{pageNames[id]}</span></a>)}<button className="fab" type="button" data-tour="add" aria-label="จดรายการ" onClick={() => setAddOpen(true)}><Plus size={26} strokeWidth={2.4} /></button>{navigation.slice(2).map(({ id, icon: Icon }) => <a href={`#${id}`} key={id} data-tour={`nav-${id}`} className={`bottom-nav-link${activeTab === id ? ' bottom-nav-link--active' : ''}`} aria-current={activeTab === id ? 'page' : undefined} onClick={() => openPage(id)}><Icon size={19} /><span>{pageNames[id]}</span></a>)}</nav>
+    <nav className="bottom-navigation" aria-label="เมนูหลัก"><span className="bottom-nav-indicator" style={{ transform: `translateX(${bottomSlot[activeTab] * 100}%)` }} aria-hidden="true" />{navigation.slice(0, 2).map(({ id, icon: Icon }) => <a href={`#${id}`} key={id} data-tour={`nav-${id}`} className={`bottom-nav-link${activeTab === id ? ' bottom-nav-link--active' : ''}`} aria-current={activeTab === id ? 'page' : undefined} onClick={() => openPage(id)}><Icon size={19} /><span>{pageNames[id]}</span></a>)}<button className="fab" type="button" data-tour="add" aria-label="จดรายการ" onClick={() => { tap(); setAddOpen(true) }}><Plus size={26} strokeWidth={2.4} /></button>{navigation.slice(2).map(({ id, icon: Icon }) => <a href={`#${id}`} key={id} data-tour={`nav-${id}`} className={`bottom-nav-link${activeTab === id ? ' bottom-nav-link--active' : ''}`} aria-current={activeTab === id ? 'page' : undefined} onClick={() => openPage(id)}><Icon size={19} /><span>{pageNames[id]}</span></a>)}</nav>
     <FinanceDialog dialog={dialog} onClose={closeDialog} onSave={saveSubmission} />
     <AppDialog open={addOpen} title="จดอะไรดี?" description="เลือกอย่างใดอย่างหนึ่ง" onClose={() => setAddOpen(false)}>
       <div className="add-sheet">

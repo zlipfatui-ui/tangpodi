@@ -841,3 +841,27 @@ button, a, input, select, textarea { transition-property: color, background-colo
 .slip-note { padding-bottom: 4px; }
 .dialog-content { padding-bottom: 6px; }
 .gate-card h1, .home-welcome__text h1, .goal-card h2, .section-heading h2, .streak-main strong { line-height: 1.4; }
+
+/* ===== ความสมูท: แอนิเมชันปิด, bottom sheet บนมือถือ, toast ===== */
+.app-dialog.app-dialog--closing[open] { animation: dialog-exit 190ms cubic-bezier(.4, 0, 1, 1) both; }
+.app-dialog.app-dialog--closing[open]::backdrop { animation: overlay-exit 190ms ease-in both; }
+.toast { display: flex; align-items: center; gap: 12px; pointer-events: auto; }
+.toast--out { animation: toast-out 280ms ease-in both; }
+.toast-action { flex: 0 0 auto; padding: 4px 10px; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.toast-action:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+@keyframes dialog-exit { to { opacity: 0; transform: translateY(12px) scale(.985); } }
+@keyframes overlay-exit { to { opacity: 0; } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+@keyframes sheet-enter { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-exit { to { transform: translateY(100%); } }
+
+@media (max-width: 700px) {
+  .app-dialog, .app-dialog--wide, .app-dialog--piggy-guide { width: 100%; max-width: none; margin: auto 0 0; border-radius: 22px 22px 0 0; border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+  .app-dialog[open] { animation: sheet-enter 280ms cubic-bezier(.2, .8, .25, 1) both; }
+  .app-dialog.app-dialog--closing[open] { animation: sheet-exit 200ms cubic-bezier(.4, 0, 1, 1) both; }
+  .app-dialog::before { display: block; width: 38px; height: 4px; margin: 8px auto 0; border-radius: 4px; background: var(--color-border); content: ''; }
+  .toast-region { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-dialog.app-dialog--closing[open], .app-dialog.app-dialog--closing[open]::backdrop, .toast--out { animation: none; }
+}

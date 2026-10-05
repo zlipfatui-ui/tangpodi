@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Check, Trash2 } from 'lucide-react'
 import { AppDialog, FormField } from './UI'
+import { DialogClosingContext, dialogExitMs } from './motion'
 import { formatMoney, getTodayISO } from '../lib/presentation'
 import type { Bill, CalendarEvent, Debt, MoneyTransaction, SavingsGoal } from '../lib/finance'
 
@@ -63,6 +64,22 @@ function DialogForm({
 }
 
 export function FinanceDialog({ dialog, onClose, onSave }: FinanceDialogProps) {
+  const [shown, setShown] = useState<ActiveDialog | null>(dialog)
+  const [lastProp, setLastProp] = useState<ActiveDialog | null>(dialog)
+  const [closing, setClosing] = useState(false)
+  if (dialog !== lastProp) {
+    setLastProp(dialog)
+    if (dialog) { setShown(dialog); setClosing(false) } else if (shown) setClosing(true)
+  }
+  useEffect(() => {
+    if (!closing) return
+    const timer = window.setTimeout(() => { setShown(null); setClosing(false) }, dialogExitMs)
+    return () => window.clearTimeout(timer)
+  }, [closing])
+  return <DialogClosingContext.Provider value={closing}><FinanceDialogContent dialog={shown} onClose={onClose} onSave={onSave} /></DialogClosingContext.Provider>
+}
+
+function FinanceDialogContent({ dialog, onClose, onSave }: FinanceDialogProps) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 

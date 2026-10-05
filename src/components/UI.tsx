@@ -1,5 +1,6 @@
-import { Children, cloneElement, isValidElement, useEffect, useRef, type ReactElement, type ReactNode } from 'react'
+import { Children, cloneElement, isValidElement, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { DialogClosingContext, dialogExitMs, toastMs } from './motion'
 
 interface AppDialogProps {
   open: boolean
@@ -15,6 +16,9 @@ export function AppDialog({ open, title, description, children, onClose, wide = 
   const dialogRef = useRef<HTMLDialogElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
   const titleId = `dialog-${title.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase()}`
+  const closingFromParent = useContext(DialogClosingContext)
+  const [closingSelf, setClosingSelf] = useState(false)
+  const closing = closingFromParent || closingSelf
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -24,15 +28,19 @@ export function AppDialog({ open, title, description, children, onClose, wide = 
       dialog.showModal()
       requestAnimationFrame(() => dialog.querySelector<HTMLElement>('[autofocus]')?.focus())
     } else if (!open && dialog.open) {
-      dialog.close()
-      previousFocus.current?.focus()
+      const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+      const finish = () => { setClosingSelf(false); dialog.close(); previousFocus.current?.focus() }
+      if (reduce) { finish(); return }
+      const timer = window.setTimeout(finish, dialogExitMs)
+      const start = window.setTimeout(() => setClosingSelf(true), 0)
+      return () => { window.clearTimeout(timer); window.clearTimeout(start) }
     }
   }, [open])
 
   return (
     <dialog
       ref={dialogRef}
-      className={`app-dialog${wide ? ' app-dialog--wide' : ''}${className ? ` ${className}` : ''}`}
+      className={`app-dialog${wide ? ' app-dialog--wide' : ''}${className ? ` ${className}` : ''}${closing ? ' app-dialog--closing' : ''}`}
       aria-labelledby={`${titleId}-title`}
       aria-describedby={description ? `${titleId}-description` : undefined}
       onCancel={(event) => { event.preventDefault(); onClose() }}
@@ -89,12 +97,25 @@ export interface ToastMessage {
   id: number
   text: string
   tone: 'success' | 'error' | 'info'
+  action?: { label: string; onClick: () => void }
+}
+
+function ToastItem({ toast }: { toast: ToastMessage }) {
+  const [leaving, setLeaving] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLeaving(true), toastMs(toast) - 280)
+    return () => window.clearTimeout(timer)
+  }, [toast])
+  return <div className={`toast toast--${toast.tone}${leaving ? ' toast--out' : ''}`}>
+    <span>{toast.text}</span>
+    {toast.action && <button type="button" className="toast-action" onClick={toast.action.onClick}>{toast.action.label}</button>}
+  </div>
 }
 
 export function Toast({ toast }: { toast: ToastMessage | null }) {
   return (
     <div className="toast-region" aria-live="polite" aria-atomic="true">
-      {toast && <div className={`toast toast--${toast.tone}`} key={toast.id}>{toast.text}</div>}
+      {toast && <ToastItem key={toast.id} toast={toast} />}
     </div>
   )
 }
