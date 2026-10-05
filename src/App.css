@@ -752,3 +752,23 @@ button, a, input, select, textarea { transition-property: color, background-colo
   .bottom-nav-indicator { height: 49px; }
 }
 @media (prefers-reduced-motion: reduce) { .coach-spot { transition: none; } }
+
+/* ===== กระปุกกับเพื่อน (Supabase) ===== */
+.shared-jars { display: grid; gap: 12px; }
+.shared-auth { display: grid; gap: 12px; max-width: 420px; }
+.shared-auth p { margin: 0; color: var(--color-muted); font-size: 0.9rem; line-height: 1.55; }
+.shared-auth-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.shared-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.shared-item { display: grid; gap: 8px; width: 100%; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-card); color: var(--color-ink); font: inherit; text-align: left; cursor: pointer; }
+.shared-item > span:first-child { display: grid; gap: 2px; }
+.shared-item small { color: var(--color-muted); }
+.shared-item:hover, .shared-item:focus-visible { border-color: var(--color-primary); outline: none; }
+.shared-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: start; gap: 18px; padding-top: 14px; border-top: 1px solid var(--color-border); }
+.shared-forms form { display: grid; gap: 10px; }
+.shared-invite { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--color-pink-soft); color: var(--color-ink); }
+.shared-invite b { letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
+.shared-sub { margin: 10px 0 0; font-family: var(--font-display); font-size: 1rem; }
+.shared-entry { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: start; gap: 12px; }
+.shared-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
+.shared-message { margin: 0; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--color-turquoise); color: var(--color-turquoise-strong); font-size: 0.9rem; }
+.shared-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--color-border); }

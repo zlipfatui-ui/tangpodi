@@ -65,6 +65,7 @@ function setPendingGuide(pending: boolean) {
 }
 
 function parsePage(hash: string): PageName {
+  if (/^#\/?join\//.test(hash)) return 'goals'
   const page = hash.replace(/^#\/?/, '') as PageName
   return page in pageNames ? page : 'overview'
 }

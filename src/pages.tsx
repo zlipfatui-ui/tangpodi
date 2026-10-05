@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { lazy, Suspense, useState, type FormEvent } from 'react'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -37,6 +37,8 @@ import type { PiggyHint } from './lib/piggyHints'
 import type { SavingStreak } from './lib/streak'
 import type { MonthlySummary } from './lib/monthlySummary'
 import piggyBankMascot from './assets/piggy-bank.webp'
+
+const SharedJars = lazy(() => import('./components/SharedJars'))
 
 const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
 
@@ -350,6 +352,7 @@ export function GoalsPage({ data, streak, onSaveToday, onAdd, onEdit, onMove, on
     <StreakCard streak={streak} hasGoals={data.goals.length > 0} onSave={onSaveToday} />
     <section className="savings-overview"><div className="savings-overview-icon"><Wallet size={24} /></div><div><span>รวมเงินในกระปุก</span><strong>{formatMoney(totalBalance)}</strong></div><div className="savings-overview-divider" /><div><span>เป้าหมายทั้งหมด</span><strong>{formatMoney(totalTarget)}</strong></div></section>
     {data.goals.length ? <div className="goal-grid">{data.goals.map((goal, index) => { const percent = goal.target ? Math.min(100, goal.balance / goal.target * 100) : 0; const GoalIcon = index % 3 === 0 ? WalletCards : index % 3 === 1 ? Wallet : Target; return <article className={`goal-card goal-card--${index % 3}`} key={goal.id}><div className="goal-card-top"><span className="goal-symbol"><GoalIcon size={18} strokeWidth={1.8} /></span><button className="icon-button" type="button" onClick={() => onEdit(goal)} aria-label={`แก้ไขกระปุก ${goal.title}`}><Edit3 size={15} /></button></div><h2>{goal.title}</h2><strong className="goal-balance">{formatMoney(goal.balance)}</strong><span className="goal-target">จากเป้าหมาย {formatMoney(goal.target)}</span><div className="goal-progress" role="progressbar" aria-label={`ความคืบหน้า ${goal.title}`} aria-valuenow={Math.round(percent)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percent}%` }} /></div><div className="goal-percent"><span>{Math.round(percent)}% แล้ว</span><span>ตั้งใจเก็บ {formatMoney(goal.monthlyPlan)}/เดือน</span></div><div className="goal-actions"><button type="button" className="button button--primary button--small" onClick={() => onMove(goal, 'in')}><Plus size={15} /> เติมเงิน</button><button type="button" className="button button--outline button--small" onClick={() => onMove(goal, 'out')}><ArrowUpToLine size={15} /> ถอนเงิน</button><button type="button" className="icon-button icon-button--danger" aria-label={`ลบกระปุก ${goal.title}`} onClick={() => onDelete(goal)}><Trash2 size={15} /></button></div></article> })}</div> : <div className="panel empty-state"><span className="empty-state-icon"><Wallet size={22} /></span><h3>เริ่มกระปุกใบแรก</h3><p>ตั้งเป้าหมาย แล้วบันทึกเงินที่แบ่งไว้</p><button className="button button--primary" type="button" onClick={onAdd}><Plus size={16} /> สร้างกระปุก</button></div>}
+    <Suspense fallback={<section className="panel"><div className="empty-inline">กำลังเปิดกระปุกกับเพื่อน…</div></section>}><SharedJars /></Suspense>
     <section className="panel"><div className="section-heading"><div><span className="eyebrow">รายการเคลื่อนไหวล่าสุด</span><h2>เงินเข้าออกกระปุก</h2></div><span className="icon-disc icon-disc--mint"><ArrowDownLeft size={18} /></span></div>{movements.length ? <ul className="transaction-list">{movements.map((movement) => { const goal = data.goals.find((item) => item.id === movement.goalId); return <li className="transaction-row" key={movement.id}><span className={`transaction-icon ${movement.direction === 'in' ? 'transaction-icon--income' : 'transaction-icon--expense'}`}>{movement.direction === 'in' ? <ArrowDownLeft size={17} /> : <ArrowUpToLine size={17} />}</span><div className="transaction-main"><b>{goal?.title ?? 'กระปุกที่ลบแล้ว'}</b><span>{movement.note || (movement.direction === 'in' ? 'เติมกระปุก' : 'ถอนเงิน')} · {formatDate(movement.date)}</span></div><strong className={movement.direction === 'in' ? 'money-positive' : ''}>{movement.direction === 'in' ? '+' : '−'}{formatMoney(movement.amount)}</strong></li> })}</ul> : <div className="empty-inline">ยังไม่มีรายการเคลื่อนไหว</div>}</section>
   </div>
 }

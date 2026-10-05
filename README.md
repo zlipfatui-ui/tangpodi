@@ -41,3 +41,7 @@ pnpm dev
 pnpm test
 pnpm build
 ```
+
+## กระปุกกับเพื่อน (Supabase)
+
+ฟีเจอร์ออมกับเพื่อนใช้ Supabase เฉพาะกระปุกร่วม ข้อมูลรายรับจ่ายยังอยู่ในเครื่อง ตั้งค่าโดยรัน `supabase/schema.sql` ใน SQL Editor ปิด Confirm email ที่ Authentication > Sign In / Providers > Email และตั้ง Site URL เป็นเว็บที่เผยแพร่ ค่า URL และ publishable key อยู่ใน `src/lib/supabase.ts` (เป็นค่าสาธารณะ ความปลอดภัยอยู่ที่ Row Level Security) แก้เป็นโปรเจกต์ของตัวเองได้ผ่าน `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY`
