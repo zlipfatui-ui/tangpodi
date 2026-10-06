@@ -22,6 +22,7 @@ export interface MoneyTransaction {
   linkedType?: LinkedEntryType
   linkedId?: string
   slipRef?: string
+  sharedEntryId?: string
 }
 
 export interface Bill {

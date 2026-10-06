@@ -27,7 +27,7 @@ import { loadFinanceData, requestPersistentStorage, saveFinanceData } from './li
 import { createDemoFinanceData, createEmptyFinanceData } from './lib/data'
 import { applyRecurring } from './lib/recurring'
 import { getTodayISO, shiftAnchor } from './lib/presentation'
-import type { Bill, FinanceData, PeriodView, RecurringItem } from './lib/finance'
+import type { Bill, FinanceData, MoneyTransaction, PeriodView, RecurringItem } from './lib/finance'
 import { getSavingStreak } from './lib/streak'
 import { getPiggyHint } from './lib/piggyHints'
 import { getMonthlySummary } from './lib/monthlySummary'
@@ -93,6 +93,7 @@ function syncThemeToDocument(theme: FinanceData['settings']['theme']) {
 
 export default function App() {
   const [data, setData] = useState<FinanceData | null>(null)
+  const dataRef = useRef<FinanceData | null>(null)
   const [page, setPage] = useState<PageName>(() => parsePage(window.location.hash))
   const [leavingPage, setLeavingPage] = useState<PageName | null>(null)
   const [routeDirection, setRouteDirection] = useState<'forward' | 'backward'>('forward')
@@ -153,7 +154,7 @@ export default function App() {
           setPendingGuide(true)
           if (active) setGuideOpen(true)
         }
-        if (active) { setData(initial); setLoadError('') }
+        if (active) { dataRef.current = initial; setData(initial); setLoadError('') }
         void requestPersistentStorage().catch(() => false)
       } catch {
         if (active) setLoadError('เปิดข้อมูลในอุปกรณ์นี้ไม่สำเร็จ รีเฟรชหน้าแล้วลองอีกครั้ง')
@@ -189,6 +190,7 @@ export default function App() {
     setSaving(true)
     try {
       await saveFinanceData(next)
+      dataRef.current = next
       setData(next)
       setLoadError('')
       if (successMessage) notify(successMessage)
@@ -254,6 +256,16 @@ export default function App() {
     setPendingGuide(true)
     setGuideOpen(true)
     openPage('overview')
+  }
+
+  const addPersonalTransfer = async (transaction: MoneyTransaction): Promise<boolean> => {
+    const current = dataRef.current
+    if (!current) return false
+    return persist({ ...current, transactions: [transaction, ...current.transactions] })
+  }
+  const removePersonalTransfer = async (sharedEntryId: string): Promise<void> => {
+    const current = dataRef.current
+    if (current) await persist({ ...current, transactions: current.transactions.filter((item) => item.sharedEntryId !== sharedEntryId) }, 'ลบรายการคู่แล้ว')
   }
 
   const closeDialog = () => setDialog(null)
@@ -404,7 +416,7 @@ export default function App() {
       }
       case 'ledger': return <>{listSwitch('ledger')}<LedgerPage data={data} anchor={anchor} onShift={(direction) => setAnchor((current) => shiftAnchor(current, 'month', direction))} onAdd={(kind) => setDialog({ kind: 'transaction', presetKind: kind })} onEdit={(transaction) => setDialog({ kind: 'transaction', transaction })} onDelete={confirmDelete} /></>
       case 'calendar': return <>{listSwitch('calendar')}<CalendarPage data={data} anchor={anchor} onShift={(direction) => setAnchor((current) => shiftAnchor(current, 'month', direction))} onAddEvent={(date) => setDialog({ kind: 'event', date })} onAddBill={() => setDialog({ kind: 'bill' })} onAddDebt={() => setDialog({ kind: 'debt' })} onEditBill={(bill) => setDialog({ kind: 'bill', bill })} onEditDebt={(debt) => setDialog({ kind: 'debt', debt })} onPayBill={(bill) => void markPaid(bill)} onPayDebt={(debt) => setDialog({ kind: 'debtPayment', debt })} onEditEvent={(event) => setDialog({ kind: 'event', event })} onDelete={(type, id, label) => confirmDelete(type, id, label)} onExport={downloadCalendar} /></>
-      case 'goals': return <GoalsPage data={data} streak={streak} onSaveToday={saveToday} onAdd={() => setDialog({ kind: 'goal' })} onEdit={(goal) => setDialog({ kind: 'goal', goal })} onMove={(goal, direction) => setDialog({ kind: 'goalMovement', goal, direction })} onDelete={(goal) => confirmDelete('goal', goal.id, goal.title)} />
+      case 'goals': return <GoalsPage data={data} onAddPersonal={addPersonalTransfer} onRemovePersonal={removePersonalTransfer} streak={streak} onSaveToday={saveToday} onAdd={() => setDialog({ kind: 'goal' })} onEdit={(goal) => setDialog({ kind: 'goal', goal })} onMove={(goal, direction) => setDialog({ kind: 'goalMovement', goal, direction })} onDelete={(goal) => confirmDelete('goal', goal.id, goal.title)} />
       case 'more': return <MorePage data={data} onNavigate={(next) => openPage(next as PageName)} onTour={startTour} onToggleHints={toggleHints} onAddRecurring={addRecurring} onDeleteRecurring={deleteRecurring} />
       case 'utilities': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><UtilitiesPage data={data} onAddBill={(title, amount) => setDialog({ kind: 'bill', title, amount })} /></>
       case 'settings': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><SettingsPage data={data} saving={saving} onSave={(settings) => persist({ ...data, settings }, 'บันทึกการตั้งค่าแล้ว')} onThemeChange={changeTheme} onExport={downloadBackup} onImport={(file) => void importBackup(file)} onClearDemo={clearDemo} onReset={resetAll} /></>
