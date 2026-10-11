@@ -37,6 +37,12 @@ import './App.css'
 const SlipScanDialog = lazy(() => import('./components/SlipScanDialog'))
 const TaxCalculator = lazy(() => import('./components/TaxCalculator'))
 const SummaryPage = lazy(() => import('./components/SummaryPage'))
+// โหลดหน้าที่แยกไฟล์ไว้ล่วงหน้าตอนว่าง หน้าจะได้ไม่ว่างเปล่าแวบหนึ่งตอนเปลี่ยนหน้า
+if (typeof window !== 'undefined') {
+  const warm = () => { void import('./components/SummaryPage'); void import('./components/TaxCalculator') }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 3000 })
+  else setTimeout(warm, 1500)
+}
 
 type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings' | 'tax' | 'summary'
 type TabName = 'overview' | 'ledger' | 'goals' | 'more'
@@ -61,7 +67,7 @@ const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
 const tabOf = (page: PageName): TabName => page === 'calendar' || page === 'summary' ? 'ledger' : page === 'utilities' || page === 'settings' || page === 'tax' ? 'more' : page
 // ช่องที่ 3 ของแถบล่างเป็นปุ่ม + จึงข้ามดัชนีที่ 2
 const bottomSlot: Record<TabName, number> = { overview: 0, ledger: 1, goals: 3, more: 4 }
-const routeAnimationMs = 340
+const routeAnimationMs = 540
 const onboardingPendingKey = 'tangpodi-onboarding-pending'
 
 function hasPendingGuide() {
@@ -141,7 +147,7 @@ export default function App() {
     setRouteDirection(bottomSlot[tabOf(next)] >= bottomSlot[tabOf(current)] ? 'forward' : 'backward')
     setLeavingPage(motionAllowed ? current : null)
     setPage(next)
-    window.scrollTo({ top: 0 })
+    window.scrollTo({ top: 0, behavior: motionAllowed ? 'smooth' : 'auto' })
     if (motionAllowed) routeTimer.current = window.setTimeout(() => { setLeavingPage(null); routeTimer.current = null }, routeAnimationMs)
   }, [])
 
