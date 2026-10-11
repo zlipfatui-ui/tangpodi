@@ -985,3 +985,42 @@ h1 { font-weight: 600; }
 .more-account__who { display: grid; gap: 1px; min-width: 0; }
 .more-account__who small { color: var(--color-muted); overflow-wrap: anywhere; }
 .more-logout { color: var(--color-danger); border-color: var(--color-danger); }
+
+/* ---------- สรุป (การ์ตูน) ---------- */
+.summary-card { display: grid; gap: 16px; }
+.summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.summary-head h1 { margin: 0; font-size: 1.9rem; }
+.summary-month { display: flex; align-items: center; gap: 4px; padding: 3px; border: var(--toon-line) solid var(--color-ink); border-radius: 999px; background: var(--color-card); box-shadow: 3px 3px 0 var(--color-ink); font-weight: 700; font-size: .92rem; }
+.summary-month .icon-button { width: 32px; height: 32px; min-height: 0; border: 0; box-shadow: none; background: none; }
+.summary-saved { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 16px 18px; border: var(--toon-line) solid var(--color-ink); border-radius: 22px; background: var(--color-card); box-shadow: var(--toon-shadow); }
+.summary-saved div { display: grid; gap: 2px; }
+.summary-saved span { font-weight: 700; }
+.summary-saved strong { font-family: var(--font-display); font-size: 2.1rem; line-height: 1.15; }
+.summary-good { color: #1fa951; }
+.summary-swap { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 2px solid var(--color-ink); border-radius: 12px; background: color-mix(in srgb, var(--color-warning) 22%, var(--color-card)); color: var(--color-ink); font: inherit; font-weight: 700; font-size: .85rem; cursor: pointer; box-shadow: 2px 2px 0 var(--color-ink); white-space: nowrap; }
+.summary-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.summary-tile { display: grid; gap: 4px; align-content: start; padding: 14px; border: var(--toon-line) solid var(--color-ink); border-radius: 20px; box-shadow: var(--toon-shadow); min-width: 0; }
+.summary-tile span { font-weight: 700; font-size: .9rem; }
+.summary-tile strong { font-family: var(--font-display); font-size: 1.45rem; line-height: 1.2; overflow-wrap: anywhere; }
+.summary-tile small { font-size: .78rem; font-weight: 600; }
+.summary-tile--expense { background: color-mix(in srgb, var(--color-pink) 18%, var(--color-card)); }
+.summary-tile--expense strong, .summary-tile--expense small { color: #c2306f; }
+.summary-tile--income { background: color-mix(in srgb, var(--color-turquoise) 20%, var(--color-card)); }
+.summary-tile--income strong { color: var(--color-turquoise-strong); }
+.summary-bar { height: 12px; border: 2px solid var(--color-ink); border-radius: 999px; background: var(--color-card); overflow: hidden; }
+.summary-bar i { display: block; height: 100%; background: #e2508c; border-right: 2px solid var(--color-ink); border-radius: 999px; transition: width .6s cubic-bezier(.3,1.4,.5,1); }
+.summary-chart { display: grid; grid-template-columns: minmax(130px, 170px) 1fr; gap: 18px; align-items: center; }
+.summary-donut { width: 100%; filter: drop-shadow(4px 4px 0 var(--color-ink)); animation: donut-spin .7s cubic-bezier(.3,1.4,.5,1); }
+@keyframes donut-spin { from { transform: rotate(-120deg) scale(.6); opacity: 0; } }
+.summary-facts { margin: 0; display: grid; gap: 10px; }
+.summary-facts div { display: flex; justify-content: space-between; gap: 8px; font-size: .88rem; }
+.summary-facts dt { color: var(--color-muted); }
+.summary-facts dd { margin: 0; font-weight: 700; text-align: right; }
+.summary-cats { display: grid; gap: 14px; }
+.summary-cats h2 { margin: 0; }
+.summary-cat { display: grid; gap: 6px; }
+.summary-cat__row { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+.summary-cat__row span { display: inline-flex; align-items: center; gap: 8px; }
+.summary-cat__row span i { width: 14px; height: 14px; border: 2px solid var(--color-ink); border-radius: 5px; }
+.summary-cat__row small { color: var(--color-muted); font-weight: 600; }
+@media (max-width: 420px) { .summary-chart { grid-template-columns: 1fr; justify-items: center; } .summary-donut { max-width: 180px; } .summary-facts { width: 100%; } .summary-saved strong { font-size: 1.8rem; } }

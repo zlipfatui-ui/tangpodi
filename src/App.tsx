@@ -36,8 +36,9 @@ import './App.css'
 
 const SlipScanDialog = lazy(() => import('./components/SlipScanDialog'))
 const TaxCalculator = lazy(() => import('./components/TaxCalculator'))
+const SummaryPage = lazy(() => import('./components/SummaryPage'))
 
-type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings' | 'tax'
+type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings' | 'tax' | 'summary'
 type TabName = 'overview' | 'ledger' | 'goals' | 'more'
 const pageNames: Record<PageName, string> = {
   overview: 'หน้าแรก',
@@ -48,6 +49,7 @@ const pageNames: Record<PageName, string> = {
   utilities: 'เครื่องมือ',
   settings: 'ตั้งค่า',
   tax: 'ภาษี',
+  summary: 'สรุป',
 }
 const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
   { id: 'overview', icon: LayoutDashboard },
@@ -56,7 +58,7 @@ const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
   { id: 'more', icon: MoreHorizontal },
 ]
 // เส้นทางย่อยอยู่ใต้แท็บหลัก: ปฏิทินอยู่กับรายการ, เครื่องมือและตั้งค่าอยู่กับเพิ่มเติม
-const tabOf = (page: PageName): TabName => page === 'calendar' ? 'ledger' : page === 'utilities' || page === 'settings' || page === 'tax' ? 'more' : page
+const tabOf = (page: PageName): TabName => page === 'calendar' || page === 'summary' ? 'ledger' : page === 'utilities' || page === 'settings' || page === 'tax' ? 'more' : page
 // ช่องที่ 3 ของแถบล่างเป็นปุ่ม + จึงข้ามดัชนีที่ 2
 const bottomSlot: Record<TabName, number> = { overview: 0, ledger: 1, goals: 3, more: 4 }
 const routeAnimationMs = 340
@@ -425,7 +427,7 @@ export default function App() {
   const title = pageNames[page]
   const activeTab = tabOf(page)
   const navigationButtons = () => navigation.map(({ id, icon: Icon }) => <div className="nav-entry" key={id}><a className={`nav-link${activeTab === id ? ' nav-link--active' : ''}`} href={`#${id}`} data-tour={`nav-${id}`} aria-current={activeTab === id ? 'page' : undefined} onClick={() => openPage(id)}><Icon size={18} strokeWidth={1.9} /><span>{pageNames[id]}</span>{id === 'ledger' && data && data.bills.filter((bill) => !bill.paid).length > 0 && <i className="nav-dot" aria-label="มีบิลรอชำระ" />}</a></div>)
-  const listSwitch = (active: 'ledger' | 'calendar') => <div className="segmented list-switch" aria-label="มุมมองรายการ">{([['ledger', 'รายการ'], ['calendar', 'ปฏิทิน']] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={active === key} onClick={() => openPage(key)}>{label}</button>)}</div>
+  const listSwitch = (active: 'ledger' | 'calendar' | 'summary') => <div className="segmented list-switch" aria-label="มุมมองรายการ">{([['ledger', 'รายการ'], ['summary', 'สรุป'], ['calendar', 'ปฏิทิน']] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={active === key} onClick={() => openPage(key)}>{label}</button>)}</div>
 
   const renderContent = (targetPage: PageName) => {
     if (!data) return null
@@ -441,6 +443,7 @@ export default function App() {
       case 'goals': return <GoalsPage data={data} onAddPersonal={addPersonalTransfer} onRemovePersonal={removePersonalTransfer} streak={streak} onSaveToday={saveToday} onAdd={() => setDialog({ kind: 'goal' })} onEdit={(goal) => setDialog({ kind: 'goal', goal })} onMove={(goal, direction) => setDialog({ kind: 'goalMovement', goal, direction })} onDelete={(goal) => confirmDelete('goal', goal.id, goal.title)} />
       case 'more': return <MorePage data={data} onNavigate={(next) => openPage(next as PageName)} onTour={startTour} onToggleHints={toggleHints} onAddRecurring={addRecurring} onDeleteRecurring={deleteRecurring} />
       case 'utilities': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><UtilitiesPage data={data} onAddBill={(title, amount) => setDialog({ kind: 'bill', title, amount })} /></>
+      case 'summary': return <>{listSwitch('summary')}<Suspense fallback={null}><SummaryPage data={data} /></Suspense></>
       case 'tax': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><Suspense fallback={null}><TaxCalculator data={data} /></Suspense></>
       case 'settings': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><SettingsPage data={data} saving={saving} onSave={(settings) => persist({ ...data, settings }, 'บันทึกการตั้งค่าแล้ว')} onThemeChange={changeTheme} onExport={downloadBackup} onImport={(file) => void importBackup(file)} onClearDemo={clearDemo} onReset={resetAll} /></>
     }
