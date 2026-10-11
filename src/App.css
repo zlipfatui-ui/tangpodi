@@ -510,10 +510,8 @@ button, a, input, select, textarea { transition-property: color, background-colo
 .page-stage { position: relative; isolation: isolate; overflow-x: clip; overflow-clip-margin: 10px; }
 .content-wrap--leave { position: absolute; z-index: 1; top: 0; right: 0; left: 0; pointer-events: none; }
 .content-wrap--enter { position: relative; z-index: 2; background: transparent; }
-.page-stage--forward .content-wrap--leave { animation: page-out-left 200ms cubic-bezier(.5,0,.75,0) both; }
-.page-stage--forward .content-wrap--enter { animation: page-in-right 420ms cubic-bezier(.2,1.25,.4,1) 110ms both; }
-.page-stage--backward .content-wrap--leave { animation: page-out-right 200ms cubic-bezier(.5,0,.75,0) both; }
-.page-stage--backward .content-wrap--enter { animation: page-in-left 420ms cubic-bezier(.2,1.25,.4,1) 110ms both; }
+.page-stage--forward .content-wrap--enter { animation: page-in-right 260ms cubic-bezier(.22,1.2,.36,1) both; will-change: transform, opacity; }
+.page-stage--backward .content-wrap--enter { animation: page-in-left 260ms cubic-bezier(.22,1.2,.36,1) both; will-change: transform, opacity; }
 /* ระหว่างเปลี่ยนหน้า ไม่ให้การ์ดข้างในเล่นแอนิเมชันซ้อนจนดูกระตุก */
 .content-wrap--enter .wallet-card, .content-wrap--enter .goal-card, .content-wrap--enter .transaction-row, .content-wrap--enter .due-row, .content-wrap--enter .agenda-item, .content-wrap--enter .month-list-row, .content-wrap--enter .obligation-row, .content-wrap--enter .summary-donut { animation: none; }
 .sidebar, .panel, .summary-tile, .goal-card, .mobile-topbar, .bottom-navigation, .mobile-drawer, .app-dialog, .search-box { transition: background-color var(--motion-page) var(--motion-ease), color var(--motion-state) var(--motion-ease), border-color var(--motion-state) var(--motion-ease), box-shadow var(--motion-state) var(--motion-ease); }
@@ -528,8 +526,8 @@ button, a, input, select, textarea { transition-property: color, background-colo
 .nav-link:active, .bottom-nav-link:active, .segmented button:active:not(:disabled), .calendar-day:active:not(:disabled) { transform: scale(.96); }
 @keyframes page-out-left { to { opacity: 0; transform: translateX(-28px) scale(.98); } }
 @keyframes page-out-right { to { opacity: 0; transform: translateX(28px) scale(.98); } }
-@keyframes page-in-right { from { opacity: 0; transform: translateX(40px) scale(.97); } to { opacity: 1; transform: none; } }
-@keyframes page-in-left { from { opacity: 0; transform: translateX(-40px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes page-in-right { from { opacity: 0; transform: translate3d(24px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes page-in-left { from { opacity: 0; transform: translate3d(-24px, 0, 0); } to { opacity: 1; transform: none; } }
 @keyframes budget-enter { from { opacity: .7; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes item-enter { from { opacity: .55; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes progress-reveal { from { transform: scaleX(0); } to { transform: scaleX(1); } }

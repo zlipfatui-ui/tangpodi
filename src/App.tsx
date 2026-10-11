@@ -67,7 +67,7 @@ const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
 const tabOf = (page: PageName): TabName => page === 'calendar' || page === 'summary' ? 'ledger' : page === 'utilities' || page === 'settings' || page === 'tax' ? 'more' : page
 // ช่องที่ 3 ของแถบล่างเป็นปุ่ม + จึงข้ามดัชนีที่ 2
 const bottomSlot: Record<TabName, number> = { overview: 0, ledger: 1, goals: 3, more: 4 }
-const routeAnimationMs = 540
+const routeAnimationMs = 260
 const onboardingPendingKey = 'tangpodi-onboarding-pending'
 
 function hasPendingGuide() {
@@ -147,7 +147,7 @@ export default function App() {
     setRouteDirection(bottomSlot[tabOf(next)] >= bottomSlot[tabOf(current)] ? 'forward' : 'backward')
     setLeavingPage(motionAllowed ? current : null)
     setPage(next)
-    window.scrollTo({ top: 0, behavior: motionAllowed ? 'smooth' : 'auto' })
+    window.scrollTo({ top: 0 })
     if (motionAllowed) routeTimer.current = window.setTimeout(() => { setLeavingPage(null); routeTimer.current = null }, routeAnimationMs)
   }, [])
 
@@ -466,7 +466,6 @@ export default function App() {
     <div className="mobile-topbar"><a className="mobile-brand" href="#overview" onClick={() => openPage('overview')}><span className="brand-mark"><WalletCards size={19} /></span><b>ตังค์พอดี</b></a><div className="mobile-topbar-actions">{helpButton}<button className="icon-button theme-toggle" type="button" aria-label={themeActionLabel} title={themeActionLabel} disabled={saving} onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}><ThemeIcon size={18} /></button></div></div>
     <main className="main-area"><div className="main-topline"><div className="breadcrumb"><span>ตังค์พอดี</span><span>/</span><strong>{title}</strong></div><div className="topline-actions">{helpButton}<span className="today-label">ข้อมูลส่วนตัวอยู่ในเครื่องนี้</span><button className="icon-button theme-toggle" type="button" aria-label={themeActionLabel} title={themeActionLabel} disabled={saving} onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}><ThemeIcon size={17} /></button></div></div>
       <div className={`page-stage page-stage--${routeDirection}`}>
-        {leavingPage && <div className="content-wrap content-wrap--leave" key={leavingPage} aria-hidden="true" inert>{renderContent(leavingPage)}</div>}
         <div className={`content-wrap${leavingPage ? ' content-wrap--enter' : ''}`} key={page}>{renderContent(page)}</div>
       </div><footer className="app-footer"><span>ตังค์พอดี · จัดเงินได้แบบไม่กดดัน</span><a href="https://museum.li.mahidol.ac.th/color-palettes/" target="_blank" rel="noreferrer">ที่มาสีประจำวัน <CircleHelp size={13} /></a></footer>
     </main>
