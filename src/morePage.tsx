@@ -1,6 +1,7 @@
 import { ToonDate, ToonSelect } from './components/ToonPickers'
 import { useState, type FormEvent } from 'react'
-import { ChevronRight, Plus, Repeat, Settings as SettingsIcon, Trash2, Wrench, Route, Landmark } from 'lucide-react'
+import { ChevronRight, Plus, Repeat, Settings as SettingsIcon, Trash2, Wrench, Route, Landmark, LogIn, LogOut } from 'lucide-react'
+import { readStoredUser, setGateSkipped } from './lib/authStore'
 import { FormField } from './components/UI'
 import { formatMoney, getTodayISO } from './lib/presentation'
 import type { FinanceData, RecurringItem } from './lib/finance'
@@ -23,6 +24,22 @@ export function MorePage({ data, onNavigate, onTour, onToggleHints, onAddRecurri
   const [error, setError] = useState('')
   const items = data.recurring ?? []
   const hintsEnabled = data.piggy?.hintsEnabled ?? true
+  const user = readStoredUser()
+  const [signingOut, setSigningOut] = useState(false)
+
+  const signOut = async () => {
+    if (!window.confirm('ออกจากระบบใช่ไหม? ข้อมูลรายรับจ่ายในเครื่องยังอยู่ครบ')) return
+    setSigningOut(true)
+    try {
+      const { supabase } = await import('./lib/supabase')
+      await supabase.auth.signOut()
+    } finally {
+      // กลับไปหน้าล็อกอิน (ถ้าเน็ตหลุดก็ยังออกได้)
+      setGateSkipped(false)
+      window.location.reload()
+    }
+  }
+  const signIn = () => { setGateSkipped(false); window.location.reload() }
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -61,6 +78,13 @@ export function MorePage({ data, onNavigate, onTour, onToggleHints, onAddRecurri
     </section>
     <section className="panel more-toggle">
       <label><input type="checkbox" checked={hintsEnabled} onChange={(event) => onToggleHints(event.target.checked)} /> <span><b>ให้หมูทักทาย</b><small>เตือนบิล งบ และ streak การออมบนหน้าแรก</small></span></label>
+    </section>
+    <section className="panel more-account">
+      {user
+        ? <><span className="more-account__who"><small>ล็อกอินอยู่</small><b>{user.name}</b><small>{user.email}</small></span>
+          <button className="button button--outline more-logout" type="button" disabled={signingOut} onClick={() => void signOut()}><LogOut size={17} /> {signingOut ? 'กำลังออก…' : 'ออกจากระบบ'}</button></>
+        : <><span className="more-account__who"><small>ยังไม่ได้ล็อกอิน</small><b>ใช้งานในเครื่องนี้</b></span>
+          <button className="button button--primary" type="button" onClick={signIn}><LogIn size={17} /> เข้าสู่ระบบ</button></>}
     </section>
   </div>
 }

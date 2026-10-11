@@ -980,3 +980,8 @@ h1 { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { :where(button, .button, a.more-link, [role="tab"]):active { animation: none; } }
 .dialog-content .toon-menu, .dialog-content .toon-calendar { margin: 8px 6px 8px 0; box-shadow: 3px 3px 0 var(--color-ink); }
 .dialog-content .toon-trigger { width: calc(100% - 4px); }
+
+.more-account { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.more-account__who { display: grid; gap: 1px; min-width: 0; }
+.more-account__who small { color: var(--color-muted); overflow-wrap: anywhere; }
+.more-logout { color: var(--color-danger); border-color: var(--color-danger); }
