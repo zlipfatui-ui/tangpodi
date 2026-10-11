@@ -11,6 +11,9 @@ importers:
       '@fontsource/kanit':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/mali':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/sarabun':
         specifier: ^5.3.0
         version: 5.3.0
@@ -149,6 +152,9 @@ packages:
 
   '@fontsource/kanit@5.3.0':
     resolution: {integrity: sha512-XrVxf5NWb8QLAEbQS2GYir3AY0WbOLr5Q80fWurnoFWXyc7CWvioGNPC2dxRGZKocMUXbwGhuK+sJqWkRLAWNA==}
+
+  '@fontsource/mali@5.3.0':
+    resolution: {integrity: sha512-/H7zdnFcBUdLh7mPUCLWfCoQVgtvnVKrlHjknq90kltPvUcu0nC9ybne4z2rzTghV9ez9N7nRDvRZesODB/YbQ==}
 
   '@fontsource/sarabun@5.3.0':
     resolution: {integrity: sha512-8GWxnEIG9g/2JlZxU+APaVwipcLMkZkBps9N1tEyBxXWaJEnAtHpuaDYmFVG7lzTgr28orG7//htD/rfxDlfFg==}
@@ -1079,6 +1085,8 @@ snapshots:
   '@exodus/bytes@1.16.0': {}
 
   '@fontsource/kanit@5.3.0': {}
+
+  '@fontsource/mali@5.3.0': {}
 
   '@fontsource/sarabun@5.3.0': {}
 

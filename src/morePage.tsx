@@ -1,5 +1,6 @@
+import { ToonDate, ToonSelect } from './components/ToonPickers'
 import { useState, type FormEvent } from 'react'
-import { ChevronRight, Plus, Repeat, Settings as SettingsIcon, Trash2, Wrench, Route } from 'lucide-react'
+import { ChevronRight, Plus, Repeat, Settings as SettingsIcon, Trash2, Wrench, Route, Landmark } from 'lucide-react'
 import { FormField } from './components/UI'
 import { formatMoney, getTodayISO } from './lib/presentation'
 import type { FinanceData, RecurringItem } from './lib/finance'
@@ -36,7 +37,8 @@ export function MorePage({ data, onNavigate, onTour, onToggleHints, onAddRecurri
   return <div className="page-stack">
     <section className="welcome-row"><div><div className="eyebrow">ทุกอย่างที่เหลือ</div><h1>เพิ่มเติม</h1><p>เครื่องมือ รายการประจำ และการตั้งค่า</p></div></section>
     <div className="more-links">
-      <button type="button" className="more-link" onClick={() => onNavigate('utilities')}><span className="icon-disc icon-disc--turquoise"><Wrench size={18} /></span><span><b>เครื่องมือ</b><small>ค่าไฟ ค่าน้ำ ลองจำลองรายจ่ายก้อนใหญ่</small></span><ChevronRight size={17} /></button>
+      <button type="button" className="more-link" onClick={() => onNavigate('tax')}><span className="icon-disc icon-disc--pink"><Landmark size={18} /></span><span><b>คำนวณภาษีเงินได้</b><small>มนุษย์เงินเดือน พร้อมสอนวิธีคิดทีละขั้น</small></span><ChevronRight size={17} /></button>
+      <button type="button" className="more-link" onClick={() => onNavigate('utilities')}><span className="icon-disc icon-disc--turquoise"><Wrench size={18} /></span><span><b>เครื่องมือ</b><small>ค่าไฟ ค่าน้ำ</small></span><ChevronRight size={17} /></button>
       <button type="button" className="more-link" onClick={() => onNavigate('settings')}><span className="icon-disc icon-disc--pink"><SettingsIcon size={18} /></span><span><b>ตั้งค่าและสำรองข้อมูล</b><small>รายได้ งบ ธีม ส่งออก/นำเข้า</small></span><ChevronRight size={17} /></button>
       <button type="button" className="more-link" onClick={onTour}><span className="icon-disc icon-disc--mint"><Route size={18} /></span><span><b>ให้หมูพาเที่ยวอีกครั้ง</b><small>ทบทวนวิธีใช้แอปทีละขั้น</small></span><ChevronRight size={17} /></button>
     </div>
@@ -51,9 +53,9 @@ export function MorePage({ data, onNavigate, onTour, onToggleHints, onAddRecurri
       <form className="recurring-form" noValidate onSubmit={submit} aria-label="เพิ่มรายการประจำ">
         <FormField id="rec-title" label="ชื่อรายการ"><input id="rec-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="เช่น ค่าอินเทอร์เน็ต" /></FormField>
         <FormField id="rec-amount" label="จำนวนเงิน (บาท)"><input id="rec-amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></FormField>
-        <FormField id="rec-kind" label="ประเภท"><select id="rec-kind" value={kind} onChange={(event) => setKind(event.target.value as 'expense' | 'income')}><option value="expense">รายจ่าย</option><option value="income">รายรับ</option></select></FormField>
-        <FormField id="rec-frequency" label="ทำซ้ำ"><select id="rec-frequency" value={frequency} onChange={(event) => setFrequency(event.target.value as 'monthly' | 'weekly')}><option value="monthly">ทุกเดือน</option><option value="weekly">ทุกสัปดาห์</option></select></FormField>
-        <FormField id="rec-start" label="วันที่เริ่ม" error={error}><input id="rec-start" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></FormField>
+        <FormField id="rec-kind" label="ประเภท"><ToonSelect id="rec-kind" value={kind} options={[{ value: 'expense', label: 'รายจ่าย' }, { value: 'income', label: 'รายรับ' }]} onChange={(value) => setKind(value as 'expense' | 'income')} /></FormField>
+        <FormField id="rec-frequency" label="ทำซ้ำ"><ToonSelect id="rec-frequency" value={frequency} options={[{ value: 'monthly', label: 'ทุกเดือน' }, { value: 'weekly', label: 'ทุกสัปดาห์' }]} onChange={(value) => setFrequency(value as 'monthly' | 'weekly')} /></FormField>
+        <FormField id="rec-start" label="วันที่เริ่ม" error={error}><ToonDate id="rec-start" value={startDate} onChange={setStartDate} /></FormField>
         <button className="button button--primary" type="submit"><Plus size={16} /> เพิ่มรายการประจำ</button>
       </form></details>
     </section>

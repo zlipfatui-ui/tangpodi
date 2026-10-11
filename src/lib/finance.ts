@@ -106,6 +106,9 @@ export interface PeriodWindow {
 }
 
 export interface BudgetSummary extends PeriodWindow {
+  /** รายรับ/รายจ่ายที่จดจริงทั้งเดือน */
+  monthIncome: number
+  monthExpense: number
   baseline: number
   hasHistory: boolean
   commitments: number
@@ -240,10 +243,17 @@ export function calculateBudgetSummary(data: FinanceData, anchor: string, view: 
     .filter((goal) => !goal.archived)
     .reduce((sum, goal) => sum + goal.monthlyPlan, 0)
   const required = baseline + commitments + plannedSavings
-  const cashGap = Math.max(0, required - data.settings.monthlyIncome)
+  // รายรับที่จดจริงในเดือนนี้ต้องนับด้วย ไม่งั้นผู้ใช้ใหม่ (ตั้งรายได้ไว้ 0) จะไม่เห็นเงินขึ้นเลย
+  const monthTransactions = data.transactions.filter((transaction) => inRange(transaction.date, currentMonthStart, currentMonthEnd))
+  const monthIncome = monthTransactions.filter((transaction) => transaction.kind === 'income').reduce((sum, transaction) => sum + transaction.amount, 0)
+  const monthExpense = monthTransactions.filter((transaction) => transaction.kind === 'expense').reduce((sum, transaction) => sum + transaction.amount, 0)
+  const income = Math.max(data.settings.monthlyIncome, monthIncome)
+  const cashGap = Math.max(0, required - income)
+  // ยังไม่มีประวัติและไม่ได้ตั้งงบสำรอง: ไม่จำกัดเพดาน ให้งบตามรายรับที่มี
+  const spendingCap = hasHistory || data.settings.fallbackBudget > 0 ? baseline : Infinity
   const monthlyAllowance = Math.min(
-    baseline,
-    Math.max(0, data.settings.monthlyIncome - commitments - plannedSavings),
+    spendingCap,
+    Math.max(0, income - commitments - plannedSavings),
   )
   const window = getPeriodWindow(anchor, view, data.settings.weekStartsOn)
   const periodSpent = data.transactions
@@ -263,6 +273,8 @@ export function calculateBudgetSummary(data: FinanceData, anchor: string, view: 
     periodSpent,
     periodAllowance,
     periodRemaining: periodAllowance - periodSpent,
+    monthIncome,
+    monthExpense,
   }
 }
 

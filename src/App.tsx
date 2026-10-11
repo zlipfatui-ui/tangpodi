@@ -15,6 +15,7 @@ import {
 import { FinanceDialog, type ActiveDialog, type DialogSubmission } from './components/FinanceDialog'
 import { AppDialog, Toast, type ToastMessage } from './components/UI'
 import { toastMs } from './components/motion'
+import { ReceiptDrop, type ReceiptData } from './components/ReceiptDrop'
 import { tap } from './lib/haptics'
 import { CoachMarks, PiggyHelpDialog } from './components/PiggyGuide'
 import { MorePage } from './morePage'
@@ -34,8 +35,9 @@ import { getMonthlySummary } from './lib/monthlySummary'
 import './App.css'
 
 const SlipScanDialog = lazy(() => import('./components/SlipScanDialog'))
+const TaxCalculator = lazy(() => import('./components/TaxCalculator'))
 
-type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings'
+type PageName = 'overview' | 'ledger' | 'calendar' | 'goals' | 'more' | 'utilities' | 'settings' | 'tax'
 type TabName = 'overview' | 'ledger' | 'goals' | 'more'
 const pageNames: Record<PageName, string> = {
   overview: 'หน้าแรก',
@@ -45,6 +47,7 @@ const pageNames: Record<PageName, string> = {
   more: 'เพิ่มเติม',
   utilities: 'เครื่องมือ',
   settings: 'ตั้งค่า',
+  tax: 'ภาษี',
 }
 const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
   { id: 'overview', icon: LayoutDashboard },
@@ -53,7 +56,7 @@ const navigation: Array<{ id: TabName; icon: typeof LayoutDashboard }> = [
   { id: 'more', icon: MoreHorizontal },
 ]
 // เส้นทางย่อยอยู่ใต้แท็บหลัก: ปฏิทินอยู่กับรายการ, เครื่องมือและตั้งค่าอยู่กับเพิ่มเติม
-const tabOf = (page: PageName): TabName => page === 'calendar' ? 'ledger' : page === 'utilities' || page === 'settings' ? 'more' : page
+const tabOf = (page: PageName): TabName => page === 'calendar' ? 'ledger' : page === 'utilities' || page === 'settings' || page === 'tax' ? 'more' : page
 // ช่องที่ 3 ของแถบล่างเป็นปุ่ม + จึงข้ามดัชนีที่ 2
 const bottomSlot: Record<TabName, number> = { overview: 0, ledger: 1, goals: 3, more: 4 }
 const routeAnimationMs = 340
@@ -103,6 +106,17 @@ export default function App() {
   const [anchor, setAnchor] = useState(getTodayISO())
   const [dialog, setDialog] = useState<ActiveDialog | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null)
+  const closeReceipt = useCallback(() => setReceipt(null), [])
+  // มีรายจ่ายใหม่ของวันนี้ไหม ถ้ามีคืนใบเสร็จของรายจ่ายวันนี้ทั้งหมด
+  const receiptFor = (before: FinanceData, after: FinanceData): ReceiptData | null => {
+    const today = getTodayISO()
+    const known = new Set(before.transactions.map((item) => item.id))
+    const added = after.transactions.find((item) => !known.has(item.id) && item.kind === 'expense' && item.date === today)
+    if (!added) return null
+    const items = after.transactions.filter((item) => item.kind === 'expense' && item.date === today).reverse()
+    return { id: crypto.randomUUID(), items, newId: added.id }
+  }
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [addOpen, setAddOpen] = useState(false)
@@ -327,8 +341,9 @@ export default function App() {
         break
       }
     }
-    const success = await persist(next, message)
-    if (success) setDialog(null)
+    const nextReceipt = receiptFor(data, next)
+    const success = await persist(next, nextReceipt ? undefined : message)
+    if (success) { setDialog(null); if (nextReceipt) setReceipt(nextReceipt) }
     return success
   }
 
@@ -356,7 +371,8 @@ export default function App() {
     if (!data) return
     try {
       const next = markBillPaid(data, bill.id, getTodayISO(), crypto.randomUUID())
-      await persist(next, `บันทึกว่าจ่าย ${bill.title} แล้ว`)
+      const nextReceipt = receiptFor(data, next)
+      if (await persist(next, nextReceipt ? undefined : `บันทึกว่าจ่าย ${bill.title} แล้ว`) && nextReceipt) setReceipt(nextReceipt)
     } catch (error) {
       notify(error instanceof Error ? error.message : 'บันทึกการชำระไม่สำเร็จ', 'error')
     }
@@ -394,6 +410,12 @@ export default function App() {
     return success
   } })
 
+  // ปุ่มบนแบนเนอร์ตัวอย่าง: เริ่มข้อมูลของฉันได้ทันทีโดยไม่ต้องเข้าไปหน้าตั้งค่า
+  const startMyData = async () => {
+    const success = await persist(createEmptyFinanceData(), 'พร้อมแล้ว! เริ่มจดรายการแรกของคุณได้เลย')
+    if (success) startFreshData()
+  }
+
   const resetAll = () => setDialog({ kind: 'reset', onConfirm: async () => {
     const success = await persist(createEmptyFinanceData(), 'ล้างข้อมูลทั้งหมดแล้ว')
     if (success) { setDialog(null); startFreshData() }
@@ -412,13 +434,14 @@ export default function App() {
     switch (targetPage) {
       case 'overview': {
         const hint = getPiggyHint(data, today)
-        return <HomePage data={data} anchor={anchor} view={view} streak={streak} hint={hint} summary={getMonthlySummary(data, today.slice(0, 7))} onSaveToday={saveToday} onDismissHint={() => hint && dismissHint(hint.id)} onViewChange={setView} onShift={(direction) => setAnchor((current) => shiftAnchor(current, view, direction))} onNavigate={(next) => openPage(next as PageName)} onQuickAdd={(kind) => setDialog({ kind: 'transaction', presetKind: kind })} onPayBill={(bill) => void markPaid(bill)} onPayDebt={(debt) => setDialog({ kind: 'debtPayment', debt })} />
+        return <HomePage data={data} onStartFresh={() => void startMyData()} anchor={anchor} view={view} streak={streak} hint={hint} summary={getMonthlySummary(data, today.slice(0, 7))} onSaveToday={saveToday} onDismissHint={() => hint && dismissHint(hint.id)} onViewChange={setView} onShift={(direction) => setAnchor((current) => shiftAnchor(current, view, direction))} onNavigate={(next) => openPage(next as PageName)} onQuickAdd={(kind) => setDialog({ kind: 'transaction', presetKind: kind })} onPayBill={(bill) => void markPaid(bill)} onPayDebt={(debt) => setDialog({ kind: 'debtPayment', debt })} />
       }
       case 'ledger': return <>{listSwitch('ledger')}<LedgerPage data={data} anchor={anchor} onShift={(direction) => setAnchor((current) => shiftAnchor(current, 'month', direction))} onAdd={(kind) => setDialog({ kind: 'transaction', presetKind: kind })} onEdit={(transaction) => setDialog({ kind: 'transaction', transaction })} onDelete={confirmDelete} /></>
       case 'calendar': return <>{listSwitch('calendar')}<CalendarPage data={data} anchor={anchor} onShift={(direction) => setAnchor((current) => shiftAnchor(current, 'month', direction))} onAddEvent={(date) => setDialog({ kind: 'event', date })} onAddBill={() => setDialog({ kind: 'bill' })} onAddDebt={() => setDialog({ kind: 'debt' })} onEditBill={(bill) => setDialog({ kind: 'bill', bill })} onEditDebt={(debt) => setDialog({ kind: 'debt', debt })} onPayBill={(bill) => void markPaid(bill)} onPayDebt={(debt) => setDialog({ kind: 'debtPayment', debt })} onEditEvent={(event) => setDialog({ kind: 'event', event })} onDelete={(type, id, label) => confirmDelete(type, id, label)} onExport={downloadCalendar} /></>
       case 'goals': return <GoalsPage data={data} onAddPersonal={addPersonalTransfer} onRemovePersonal={removePersonalTransfer} streak={streak} onSaveToday={saveToday} onAdd={() => setDialog({ kind: 'goal' })} onEdit={(goal) => setDialog({ kind: 'goal', goal })} onMove={(goal, direction) => setDialog({ kind: 'goalMovement', goal, direction })} onDelete={(goal) => confirmDelete('goal', goal.id, goal.title)} />
       case 'more': return <MorePage data={data} onNavigate={(next) => openPage(next as PageName)} onTour={startTour} onToggleHints={toggleHints} onAddRecurring={addRecurring} onDeleteRecurring={deleteRecurring} />
       case 'utilities': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><UtilitiesPage data={data} onAddBill={(title, amount) => setDialog({ kind: 'bill', title, amount })} /></>
+      case 'tax': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><Suspense fallback={null}><TaxCalculator data={data} /></Suspense></>
       case 'settings': return <><button className="link-button back-link" type="button" onClick={() => openPage('more')}>← กลับไปเพิ่มเติม</button><SettingsPage data={data} saving={saving} onSave={(settings) => persist({ ...data, settings }, 'บันทึกการตั้งค่าแล้ว')} onThemeChange={changeTheme} onExport={downloadBackup} onImport={(file) => void importBackup(file)} onClearDemo={clearDemo} onReset={resetAll} /></>
     }
   }
@@ -451,10 +474,11 @@ export default function App() {
     {slipOpen && <Suspense fallback={null}><SlipScanDialog open knownRefs={(data.transactions.map((item) => item.slipRef).filter(Boolean)) as string[]} onClose={() => setSlipOpen(false)} onDone={(result: SlipScanResult) => {
       setSlipOpen(false)
       if (result.amount === undefined) notify('อ่านยอดจากสลิปไม่ได้ กรอกเองได้เลย', 'info')
-      setDialog({ kind: 'transaction', presetKind: 'expense', prefill: { amount: result.amount, date: result.date, slipRef: result.slipRef, note: result.recipient ? `โอนให้ ${result.recipient}` : 'จากสลิปโอนเงิน' } })
+      setDialog({ kind: 'transaction', presetKind: 'expense', prefill: { amount: result.amount, amountUncertain: result.amountUncertain, date: result.date, slipRef: result.slipRef, note: result.recipient ? `โอนให้ ${result.recipient}` : 'จากสลิปโอนเงิน' } })
     }} /></Suspense>}
     <PiggyHelpDialog page={page} open={helpOpen} onClose={() => setHelpOpen(false)} onTour={startTour} />
     <Toast toast={toast} />
+    {receipt && <ReceiptDrop key={receipt.id} receipt={receipt} onDone={closeReceipt} />}
     {entryTransitionVisible && <div className="entry-transition" aria-hidden="true">
       <span className="entry-transition__panel entry-transition__panel--left" onAnimationEnd={() => setEntryTransitionFinished(true)} />
       <span className="entry-transition__panel entry-transition__panel--right" />

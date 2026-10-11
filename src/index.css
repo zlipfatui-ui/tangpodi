@@ -1,5 +1,5 @@
 :root {
-  font-family: 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif;
+  font-family: 'Mali', 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif;
   color: #403542;
   background: var(--color-background);
   font-synthesis: none;
@@ -23,8 +23,8 @@
   --gradient-welcome: linear-gradient(112deg, #fff0f5 0%, #fff7f8 55%, #e9f7ee 100%);
   --gradient-entry: linear-gradient(132deg, #8e4c6c 0%, #784866 52%, #557867 100%);
   --scrollbar-thumb: #ddc8d2;
-  --font-body: 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif;
-  --font-display: 'Kanit', 'Sarabun', 'Leelawadee UI', sans-serif;
+  --font-body: 'Mali', 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif;
+  --font-display: 'Mali', 'Kanit', 'Sarabun', 'Leelawadee UI', sans-serif;
   --radius-sm: 0.65rem;
   --radius-md: 1rem;
   --radius-lg: 1.4rem;

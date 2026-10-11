@@ -52,6 +52,17 @@ describe('getPeriodWindow', () => {
 })
 
 describe('calculateBudgetSummary', () => {
+  it('counts recorded income when the income setting is empty', () => {
+    const data: FinanceData = { ...baseData, settings: { ...baseData.settings, monthlyIncome: 0, fallbackBudget: 0 }, transactions: [
+      { id: 'i', date: '2026-10-01', kind: 'income', amount: 5000, category: 'เงินเดือน' },
+      { id: 'e', date: '2026-10-02', kind: 'expense', amount: 70, category: 'อาหาร' },
+    ] }
+    const summary = calculateBudgetSummary(data, '2026-10-18', 'month')
+    expect(summary.monthlyAllowance).toBe(5000)
+    expect(summary.periodRemaining).toBe(4930)
+    expect(summary.monthIncome).toBe(5000)
+  })
+
   it('uses last month variable spending and adds this month commitments once', () => {
     const data: FinanceData = {
       ...baseData,

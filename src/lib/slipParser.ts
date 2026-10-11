@@ -51,18 +51,61 @@ export function parseSlipDate(text: string, today = new Date()): string | undefi
   return parsed.toISOString().slice(0, 10) === iso ? iso : undefined
 }
 
-const amountPattern = '([\\d,]+(?:\\.\\d{1,2})?)'
+/** แก้ตัวอักษรที่ OCR มักอ่านผิดในตัวเลข เช่น O→0, l→1 และช่องว่างหลังจุลภาค */
+export function cleanAmountToken(raw: string): number | undefined {
+  let token = raw.trim()
+    .replace(/[Oo]/g, '0').replace(/[lI|]/g, '1').replace(/S/g, '5').replace(/B/g, '8')
+    .replace(/\s*([.,])\s*/g, '$1').replace(/\s+/g, '')
+  // จุลภาคเป็นทศนิยม เช่น 250,00 (ไม่มีจุดและมี 2 หลักท้าย)
+  if (!token.includes('.') && /,\d{2}$/.test(token)) token = token.replace(/,(\d{2})$/, '.$1')
+  // จุดเป็นตัวคั่นหลักพัน เช่น 1.250.00 → 1250.00
+  const dots = token.split('.').length - 1
+  if (dots > 1) token = token.replace(/\.(?=.*\.)/g, '')
+  if (!/^\d{1,3}(,\d{3})*(\.\d{1,2})?$|^\d+(\.\d{1,2})?$/.test(token)) return undefined
+  const value = Number(token.replace(/,/g, ''))
+  return Number.isFinite(value) && value > 0 && value < 100_000_000 ? value : undefined
+}
+
+// ตัวเลขที่อาจมีตัวอักษรที่ OCR อ่านเพี้ยนปน (O, l, S...) และช่องว่างหลังจุลภาค
+const amountToken = '([0-9OolIS|B](?:[0-9OolIS|B]|[.,] ?(?=[0-9OolIS|B]))*)'
+const amountLabel = '(?:จำนวนเงิน|ยอดเงิน(?!คงเหลือ)|ยอดโอน|ยอดชำระ|จำนวน|amount|total)'
+const excludedLabel = /(?:ค่าธรรมเนียม|fee|คงเหลือ|balance|ยอดเงินในบัญชี)\s*[:：]?\s*$/i
+
+export interface AmountCandidate { value: number; raw: string; score: number }
+
+/** ให้คะแนนตัวเลขทุกตัวในสลิป แล้วเลือกตัวที่น่าจะเป็นยอดโอนที่สุด */
+export function amountCandidates(text: string): AmountCandidate[] {
+  const candidates: AmountCandidate[] = []
+  const regex = new RegExp(amountToken, 'g')
+  for (const match of text.matchAll(regex)) {
+    const raw = match[1]!
+    if (!/\d/.test(raw)) continue
+    const value = cleanAmountToken(raw)
+    if (value === undefined) continue
+    const index = match.index
+    const before = text.slice(Math.max(0, index - 40), index)
+    const after = text.slice(index + raw.length, index + raw.length + 12)
+    const lineBefore = before.split('\n').pop() ?? ''
+    if (excludedLabel.test(lineBefore) || excludedLabel.test(before.replace(/\n\s*$/, ''))) continue
+    // ข้ามเวลา วันที่ เลขบัญชี และเลขอ้างอิง
+    if (/^\s*(?:น\.|:\d)/.test(after) || /[:/-]$/.test(before) || /^[:/-]\d/.test(after)) continue
+    if (/^[A-Za-z0-9]/.test(after) || /[A-Za-z0-9xX*-]$/.test(before)) continue
+    const digits = raw.replace(/\D/g, '')
+    let score = 0
+    if (/[.,]\d{2}$/.test(raw.replace(/\s/g, ''))) score += 3
+    if (/^\s*(?:บาท|thb|baht|฿)/i.test(after)) score += 4
+    if (/(?:฿|thb)\s*$/i.test(before)) score += 3
+    if (new RegExp(`${amountLabel}\\s*[:：]?\\s*(?:บาท|thb|฿)?\\s*\\n?\\s*$`, 'i').test(before)) score += 6
+    if (digits.length > 9) score -= 6
+    if (/^\d{1,2}$/.test(raw) && !/^\s*(?:บาท|thb|baht)/i.test(after)) score -= 4
+    candidates.push({ value, raw, score })
+  }
+  return candidates.sort((a, b) => b.score - a.score)
+}
 
 export function parseSlipAmount(text: string): number | undefined {
-  const labelled = new RegExp(`(?:จำนวนเงิน|จำนวน|amount)\\s*[:：]?\\s*(?:บาท|thb|฿)?\\s*${amountPattern}`, 'i').exec(text)
-  const fallback = [...text.matchAll(new RegExp(`${amountPattern}\\s*(?:บาท|thb|baht)`, 'gi'))]
-    .filter((match) => !/(?:ค่าธรรมเนียม|fee)\s*[:：]?\s*$/i.test(text.slice(Math.max(0, match.index - 20), match.index)))
-    .map((match) => match[1]!)
-  for (const raw of [labelled?.[1], fallback[0]]) {
-    const value = raw ? Number(raw.replace(/,/g, '')) : NaN
-    if (Number.isFinite(value) && value > 0) return value
-  }
-  return undefined
+  const best = amountCandidates(text)[0]
+  return best && best.score >= 3 ? best.value : undefined
 }
 
 export function parseSlipRecipient(text: string): string | undefined {

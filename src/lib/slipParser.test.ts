@@ -39,3 +39,22 @@ describe('parseSlipText', () => {
     expect(parseSlipDate('31 ก.พ. 69', today)).toBeUndefined()
   })
 })
+
+describe('parseSlipAmount robustness', () => {
+  const amt = (text: string) => parseSlipText(text, today).amount
+  it('reads the amount on the line after the label', () => {
+    expect(amt('จำนวนเงิน\n1,500.00 บาท\nค่าธรรมเนียม\n0.00 บาท')).toBe(1500)
+  })
+  it('fixes common OCR digit mistakes', () => {
+    expect(amt('จำนวน: 1,25O.5O บาท')).toBe(1250.5)
+    expect(amt('จำนวนเงิน 1, 250.00 บาท')).toBe(1250)
+    expect(amt('จำนวนเงิน 250,00 บาท')).toBe(250)
+  })
+  it('ignores balance, fee, time, date and account numbers', () => {
+    const slip = '6 ต.ค. 69 14:32 น.\nxxx-x-x1234-x\nยอดเงินคงเหลือ 9,999.00 บาท\nค่าธรรมเนียม 10.00 บาท\nจำนวนเงิน 320.00 บาท'
+    expect(amt(slip)).toBe(320)
+  })
+  it('prefers a decimal baht amount over stray numbers', () => {
+    expect(amt('รหัสอ้างอิง 0123456789012\nโอนเงินสำเร็จ\n89.00\nบาท')).toBe(89)
+  })
+})

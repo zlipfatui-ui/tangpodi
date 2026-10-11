@@ -30,6 +30,8 @@ export interface TaxResult {
   marginalRate: number
   /** บวก = ต้องจ่ายเพิ่ม ลบ = ได้คืน */
   balance: number
+  /** ภาษีแต่ละขั้นบันไดที่เงินได้สุทธิไปถึง */
+  steps: Array<{ from: number; to: number; amount: number; rate: number; tax: number }>
 }
 
 export function calculateTax(input: TaxInput): TaxResult {
@@ -46,12 +48,15 @@ export function calculateTax(input: TaxInput): TaxResult {
   let tax = 0
   let lower = 0
   let marginalRate = 0
+  const steps: TaxResult['steps'] = []
   for (const bracket of TAX_BRACKETS) {
     if (netIncome <= lower) break
-    tax += (Math.min(netIncome, bracket.upTo) - lower) * bracket.rate
+    const amount = Math.min(netIncome, bracket.upTo) - lower
+    steps.push({ from: lower, to: lower + amount, amount, rate: bracket.rate, tax: amount * bracket.rate })
+    tax += amount * bracket.rate
     marginalRate = bracket.rate
     lower = bracket.upTo
   }
   tax = Math.round(tax)
-  return { expenseDeduction, allowances, netIncome, tax, marginalRate, balance: tax - Math.max(0, input.withheld) }
+  return { expenseDeduction, allowances, netIncome, tax, marginalRate, balance: tax - Math.max(0, input.withheld), steps }
 }

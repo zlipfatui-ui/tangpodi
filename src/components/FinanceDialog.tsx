@@ -1,3 +1,4 @@
+import { ToonDate, ToonSelect } from './ToonPickers'
 import { useEffect, useState, type FormEvent } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Check, Trash2 } from 'lucide-react'
@@ -11,6 +12,8 @@ export interface TransactionPrefill {
   date?: string
   note?: string
   slipRef?: string
+  /** ยอดจากสลิปที่ระบบไม่มั่นใจ ให้ผู้ใช้ตรวจ */
+  amountUncertain?: boolean
 }
 
 export type ActiveDialog =
@@ -146,9 +149,9 @@ function TransactionDialog({ item, prefill, presetKind, categories, error, savin
   return <AppDialog open title={item ? 'แก้ไขรายการ' : 'เพิ่มรายการ'} description={prefill ? 'อ่านจากสลิป ตรวจยอดและวันที่ให้ถูกต้องก่อนบันทึก' : 'จำนวนเงินใช้หน่วยบาท'} onClose={onClose}>
     <DialogForm title="บันทึกรายการ" onSubmit={handleSubmit} onCancel={onClose} saving={saving} submitLabel={item ? 'บันทึกการแก้ไข' : 'บันทึกรายการ'}>
       <div className="segmented form-toggle" aria-label="ประเภทรายการ"><button type="button" aria-pressed={kind === 'expense'} onClick={() => { setKind('expense'); setCategory('อาหาร') }}><ArrowUpRight size={15} /> รายจ่าย</button><button type="button" aria-pressed={kind === 'income'} onClick={() => { setKind('income'); setCategory('เงินเดือน') }}><ArrowDownLeft size={15} /> รายรับ</button></div>
-      <FormField id="transaction-amount" label="จำนวนเงิน" error={validation}><div className="input-suffix"><input id="transaction-amount" type="number" min="0.01" step="0.01" inputMode="decimal" value={amount} autoFocus={!item} onChange={(event) => setAmount(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
-      <FormField id="transaction-category" label="หมวดหมู่"><select id="transaction-category" value={category} onChange={(event) => setCategory(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select></FormField>
-      <FormField id="transaction-date" label="วันที่"><input id="transaction-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></FormField>
+      <FormField id="transaction-amount" label="จำนวนเงิน" error={validation} hint={!item && prefill?.amount !== undefined ? (prefill.amountUncertain ? "⚠ อ่านจากสลิป ช่วยเช็กยอดอีกทีนะ" : "✓ อ่านยอดจากสลิปแล้ว") : undefined}><div className="input-suffix"><input id="transaction-amount" type="number" min="0.01" step="0.01" inputMode="decimal" value={amount} autoFocus={!item} onChange={(event) => setAmount(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
+      <FormField id="transaction-category" label="หมวดหมู่"><ToonSelect id="transaction-category" value={category} options={options.map((option) => ({ value: option, label: option }))} onChange={setCategory} /></FormField>
+      <FormField id="transaction-date" label="วันที่"><ToonDate id="transaction-date" value={date} onChange={setDate} /></FormField>
       <FormField id="transaction-note" label="บันทึกเพิ่มเติม"><input id="transaction-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="เช่น มื้อกลางวัน" /></FormField>
       {error && <div className="field-error" role="alert">{error}</div>}
     </DialogForm>
@@ -173,7 +176,7 @@ function BillDialog({ bill, title, amount, error, saving, onClose, onSubmit }: {
     <DialogForm title="บันทึกบิล" onSubmit={handleSubmit} onCancel={onClose} saving={saving} submitLabel={bill ? 'บันทึกการแก้ไข' : 'เพิ่มบิล'}>
       <FormField id="bill-name" label="ชื่อบิล" error={validation}><input id="bill-name" value={name} autoFocus={!bill} onChange={(event) => setName(event.target.value)} placeholder="เช่น ค่าโทรศัพท์" /></FormField>
       <FormField id="bill-amount" label="ยอดที่ต้องจ่าย"><div className="input-suffix"><input id="bill-amount" type="number" min="0.01" inputMode="decimal" value={amountValue} onChange={(event) => setAmountValue(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
-      <FormField id="bill-date" label="วันครบกำหนด"><input id="bill-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></FormField>
+      <FormField id="bill-date" label="วันครบกำหนด"><ToonDate id="bill-date" value={dueDate} onChange={setDueDate} /></FormField>
       <label className="check-row"><input type="checkbox" checked={repeatMonthly} onChange={(event) => setRepeatMonthly(event.target.checked)} /> เตือนซ้ำทุกเดือน</label>
       {error && <div className="field-error" role="alert">{error}</div>}
     </DialogForm>
@@ -198,7 +201,7 @@ function DebtDialog({ debt, error, saving, onClose, onSubmit }: { debt?: Debt; e
       <FormField id="debt-name" label="ชื่อหนี้" error={validation}><input id="debt-name" autoFocus={!debt} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="เช่น บัตรเครดิต" /></FormField>
       <FormField id="debt-balance" label="ยอดหนี้คงเหลือ"><div className="input-suffix"><input id="debt-balance" type="number" min="0.01" inputMode="decimal" value={balance} onChange={(event) => setBalance(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
       <FormField id="debt-installment" label="ยอดที่ต้องจ่ายต่อรอบ"><div className="input-suffix"><input id="debt-installment" type="number" min="0.01" inputMode="decimal" value={installment} onChange={(event) => setInstallment(event.target.value)} placeholder="0" /><span>บาท</span></div></FormField>
-      <FormField id="debt-date" label="วันครบกำหนดครั้งถัดไป"><input id="debt-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></FormField>
+      <FormField id="debt-date" label="วันครบกำหนดครั้งถัดไป"><ToonDate id="debt-date" value={dueDate} onChange={setDueDate} /></FormField>
       {error && <div className="field-error" role="alert">{error}</div>}
     </DialogForm>
   </AppDialog>
@@ -283,7 +286,7 @@ function EventDialog({ event, date, error, saving, onClose, onSubmit }: { event?
   return <AppDialog open title={event ? 'แก้ไขวันสำคัญ' : 'เพิ่มวันสำคัญ'} description="นัดหมายส่วนตัวจะแสดงในปฏิทินการเงิน" onClose={onClose}>
     <DialogForm title="บันทึกวันสำคัญ" onSubmit={handleSubmit} onCancel={onClose} saving={saving} submitLabel={event ? 'บันทึกการแก้ไข' : 'เพิ่มวันสำคัญ'}>
       <FormField id="event-name" label="ชื่อวันสำคัญ" error={validation}><input id="event-name" autoFocus={!event} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="เช่น นัดหมอฟัน" /></FormField>
-      <FormField id="event-date" label="วันที่"><input id="event-date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></FormField>
+      <FormField id="event-date" label="วันที่"><ToonDate id="event-date" value={eventDate} onChange={setEventDate} /></FormField>
       <FormField id="event-note" label="รายละเอียด"><textarea id="event-note" className="resize-none" rows={3} value={note} onChange={(event) => setNote(event.target.value)} placeholder="รายละเอียดเพิ่มเติม" /></FormField>
       {error && <div className="field-error" role="alert">{error}</div>}
     </DialogForm>

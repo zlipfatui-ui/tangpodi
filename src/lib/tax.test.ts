@@ -8,6 +8,13 @@ describe('thai personal income tax estimate', () => {
     expect(calculateTax({ ...base, income: 300_000 }).tax).toBe(0)
   })
 
+  it('matches the salary-earner worked example (50,000 × 12 + ประกันสังคม 9,000)', () => {
+    const result = calculateTax({ ...base, income: 600_000, socialSecurity: 9_000 })
+    expect(result.netIncome).toBe(431_000)
+    expect(result.tax).toBe(20_600)
+    expect(result.steps.map((step) => step.tax)).toEqual([0, 7_500, 13_100])
+  })
+
   it('walks the progressive brackets', () => {
     // 1,000,000 - 100,000 (ค่าใช้จ่าย) - 60,000 (ส่วนตัว) = 840,000 → 7,500 + 20,000 + 37,500 + 18,000
     const result = calculateTax({ ...base, income: 1_000_000 })

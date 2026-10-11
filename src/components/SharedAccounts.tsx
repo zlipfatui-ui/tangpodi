@@ -1,3 +1,4 @@
+import { ToonSelect } from './ToonPickers'
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { ArrowDownToLine, ArrowLeft, ArrowUpFromLine, Copy, Landmark, LogOut, Plus, Share2, Trash2, UserPlus } from 'lucide-react'
@@ -198,7 +199,7 @@ export default function SharedAccounts({ transactions, onAddPersonal, onRemovePe
       <h3 className="shared-sub">บันทึกรายการ</h3>
       <form className="shared-entry" noValidate onSubmit={(event) => event.preventDefault()} aria-label="บันทึกรายการบัญชีร่วม">
         <FormField id="acc-amount" label="จำนวนเงิน (บาท)"><input id="acc-amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></FormField>
-        <FormField id="acc-category" label="หมวดหมู่ (รายจ่าย)"><select id="acc-category" value={category} onChange={(event) => setCategory(event.target.value)}>{ACCOUNT_CATEGORIES.map((option) => <option key={option}>{option}</option>)}</select></FormField>
+        <FormField id="acc-category" label="หมวดหมู่ (รายจ่าย)"><ToonSelect id="acc-category" value={category} options={ACCOUNT_CATEGORIES.map((option) => ({ value: option, label: option }))} onChange={setCategory} /></FormField>
         <FormField id="acc-note" label="โน้ต (ไม่บังคับ)"><input id="acc-note" value={note} onChange={(event) => setNote(event.target.value)} maxLength={120} /></FormField>
         <div className="shared-entry-actions">
           <button className="button button--primary" type="button" onClick={() => void addEntry(selected, 'out', false)}><Plus size={16} /> บันทึกรายจ่าย</button>
